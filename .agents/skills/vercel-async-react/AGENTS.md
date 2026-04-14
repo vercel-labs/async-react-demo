@@ -4,51 +4,6 @@
 Vercel Engineering
 April 2026
 
-> **Note:**
-> This document is mainly for agents and LLMs to follow when implementing
-> async coordination patterns in React applications. Humans may also find it useful,
-> but guidance here is optimized for automation and consistency by
-> AI-assisted workflows.
-
----
-
-## Abstract
-
-Guide for implementing async coordination patterns using React's primitives — transitions, useOptimistic, useActionState, Suspense, useDeferredValue, form actions, and the action props pattern. Covers the three async layers (design, router, data), optimistic updates, pending states, loading boundaries, stale-while-revalidate search, and coordination between mutations, navigation, and data loading. Works with any Suspense-enabled data source (server components, useSuspenseQuery, use()). Includes Next.js App Router integration with server actions, updateTag(), router behavior, and background polling.
-
----
-
-## Table of Contents
-
-1. [Core Reference](#when-to-add-coordination)
-   - [When to Add Coordination](#when-to-add-coordination)
-   - [Two Migration Paths](#two-migration-paths)
-   - [Core Concepts](#core-concepts)
-   - [How It All Connects](#how-it-all-connects)
-   - [Common Mistakes](#common-mistakes)
-2. [Implementation Workflow](#implementation-workflow)
-   - [Step 1: Audit the App](#step-1-audit-the-app)
-   - [Step 2: Add Suspense Boundaries](#step-2-add-suspense-boundaries)
-   - [Step 3: Convert Design Components to Action Props](#step-3-convert-design-components-to-action-props)
-   - [Step 4: Fix Legacy State Patterns](#step-4-fix-legacy-state-patterns)
-   - [Step 5: Add Optimistic Updates](#step-5-add-optimistic-updates)
-   - [Step 6: Add Pending Feedback](#step-6-add-pending-feedback)
-   - [Step 7: Verify](#step-7-verify)
-3. [Patterns](#async-react-patterns)
-   - [Suspense Boundaries](#suspense-boundaries)
-   - [Action Props (Design Components)](#action-props-design-components)
-   - [Optimistic Mutations](#optimistic-mutations)
-   - [Pessimistic Mutations (data-pending)](#pessimistic-mutations-data-pending)
-   - [Deferred Values (Stale-While-Revalidate)](#deferred-values-stale-while-revalidate)
-   - [Action State (useActionState)](#action-state-useactionstate)
-   - [Double-Transition Pattern](#double-transition-pattern)
-   - [Coordination](#coordination)
-4. [Next.js Integration](#async-react-in-nextjs)
-   - [Server Actions + Cache Invalidation](#server-actions--cache-invalidation)
-   - [Router Behavior](#router-behavior)
-   - [Background Polling](#background-polling)
-   - [Error Boundaries](#error-boundaries)
-
 ---
 
 Coordinate async UI states using React's built-in primitives. The core idea: wrap async work in **transitions**, and React tracks pending state, batches updates, and coordinates everything — loading, mutations, navigation — through a single pipeline. No competing state layers, no race conditions.
@@ -90,21 +45,24 @@ This is an implementation order, not a "pick one" list. Implement every pattern 
 | Chat / comment input | `useOptimistic` + immediate form clear | Input clears instantly, optimistic list add |
 | Tab / filter switch | `action` prop on design component | Instant highlight, old content stays |
 | Search / filter with async results | `useDeferredValue` + `useSuspenseQuery` | Stale results stay visible while fresh data loads |
+| Streaming data to client components | Promise prop + `use()` | Server starts fetch, client unwraps — enables streaming |
 
 For animations on these state changes, see the `vercel-react-view-transitions` skill.
 
-For framework-specific integration (Next.js server actions, `refresh()`/`updateTag()` invalidation, router behavior, background polling), see the [Next.js Integration](#async-react-in-nextjs) section. **Every server action that mutates data must call `refresh()` or `updateTag()`** — without this, optimistic updates settle to stale data.
+For framework-specific integration (Next.js server actions, `updateTag()`/`refresh()` invalidation, router behavior, background polling), see [Async React in Next.js](#async-react-in-nextjs). **Every server action that mutates data must call `updateTag()` or `refresh()`** — without this, optimistic updates settle to stale data.
 
 ---
 
 ## Two Migration Paths
 
-The skill handles two kinds of work:
-
 - **Fix legacy patterns** — Replace `useState` + `useEffect` client-side fetching with server data as props + `useOptimistic` + form actions. These are actively broken: mutations and navigation compete because state lives in two places.
 - **Add coordination** — Take a working but non-interactive app (no feedback, frozen UI during async work) and add `<Suspense>` boundaries, action props, optimistic updates, and pending indicators.
 
-Most apps have a mix of both. The audit in Step 1 classifies each interaction.
+Most apps have a mix of both.
+
+## Implementation Workflow
+
+When adding async coordination to an existing app, **follow the [Implementation Workflow](#implementation-workflow-1) step by step.** Start with the audit — do not skip it.
 
 ---
 
@@ -112,155 +70,51 @@ Most apps have a mix of both. The audit in Step 1 classifies each interaction.
 
 ### Transitions (Actions)
 
-Any function run inside `startTransition` is called an **Action**. React tracks `isPending` automatically. By convention, callbacks called inside `startTransition` are named with "Action" (e.g., `submitAction`, `deleteAction`).
-
-```tsx
-const [isPending, startTransition] = useTransition();
-
-function deleteAction() {
-  startTransition(async () => {
-    await deleteItem(id);
-  });
-}
-```
-
-The transition keeps the current UI visible and interactive until the action completes. Multiple updates inside a transition commit together — no intermediate flickers. Errors thrown inside transitions bubble to error boundaries.
+Any function run inside `startTransition` is called an **Action**. React tracks `isPending` automatically. By convention, callbacks are named with "Action" (e.g., `submitAction`, `deleteAction`). The transition keeps the current UI visible and interactive until the action completes. Multiple updates inside a transition commit together — no intermediate flickers. Errors thrown inside transitions bubble to error boundaries.
 
 ### Optimistic Updates
 
-`useOptimistic` shows instant updates while an Action runs in the background. Unlike `useState` (which defers updates inside transitions), `useOptimistic` updates **immediately**. The optimistic value persists while the Action is pending, then settles to the source of truth (props or state) when the transition completes. On failure, it automatically reverts.
+`useOptimistic` shows instant updates while an Action runs in the background. Unlike `useState` (which defers updates inside transitions), `useOptimistic` updates **immediately**. The optimistic value persists while the Action is pending, then settles to the source of truth (props or state) when the transition completes. On failure, it automatically reverts. The setter must be called inside an Action (`startTransition` or form `action`).
 
-```tsx
-const [optimisticValue, setOptimistic] = useOptimistic(serverValue);
+The reducer form handles complex state (increment, add to list, multi-field). Reducers are essential when the base state might change during your Action (e.g., from polling) — React re-runs the reducer with the updated base value.
 
-<form action={async () => {
-  setOptimistic(newValue);
-  await mutate();
-}}>
-```
+`useOptimistic(false)` can also serve as a **pending indicator** — showing "Submitting..." without `useTransition`. Alternatively, derive `isPending` by comparing the optimistic value to the server value: `const isPending = optimisticValue !== serverValue`.
 
-The setter must be called inside an Action (`startTransition` or form `action`). When inside an Action prop, you can call it directly — the parent already wraps in `startTransition`. If called outside an Action, React will warn and the optimistic state will briefly render then revert.
-
-The reducer form handles complex state (increment, add to list, multi-field updates):
-
-```tsx
-const [optimisticState, dispatch] = useOptimistic(
-  { count, isFollowing },
-  (current, action) => ({
-    count: current.count + (action ? 1 : -1),
-    isFollowing: action,
-  })
-);
-```
-
-Reducers are essential when the base state might change while your Action is pending (e.g., from polling). React re-runs the reducer with the updated base value to recalculate what to show.
-
-`useOptimistic` can also be used as a **pending indicator** — `useOptimistic(false)` lets a design component show "Submitting..." without needing `useTransition`:
-
-```tsx
-const [isPending, setIsPending] = useOptimistic(false);
-
-<button onClick={() => {
-  startTransition(async () => {
-    setIsPending(true);
-    await action();
-  });
-}}>
-  {isPending ? 'Submitting...' : 'Submit'}
-</button>
-```
-
-**Derived pending from value comparison:** For design components that optimistically update a value, you can derive `isPending` by comparing the optimistic value to the server value instead of using `useTransition`:
-
-```tsx
-const [optimisticValue, setOptimisticValue] = useOptimistic(serverValue);
-const isPending = optimisticValue !== serverValue;
-```
-
-Both approaches are valid — `useTransition` gives you a `startTransition` function, while value comparison is more compact when the component already has `useOptimistic`.
+See [Optimistic Mutations](#optimistic-mutations) for toggle, reducer, list add, delete, move, and pending indicator examples.
 
 ### Suspense Boundaries
 
-Declarative loading boundaries. Place them around any component that uses a **Suspense-enabled data source** — async server components, `useSuspenseQuery` (TanStack Query), `use()` with promises, or `lazy()`. Each boundary resolves independently.
+Declarative loading boundaries. Place them around any component using a **Suspense-enabled data source** — async server components, `useSuspenseQuery`, `use()` with promises, or `lazy()`. Each boundary resolves independently. Push data access deep in the component tree — the static shell renders instantly, dynamic parts stream in. Co-locate skeletons with their components.
 
-```tsx
-<Suspense fallback={<Skeleton />}>
-  <AsyncContent />
-</Suspense>
-```
+Transitions interact with Suspense: updates inside `startTransition` that cause a component to suspend keep the old content visible instead of re-showing the fallback.
 
-Push data access deep in the component tree. The static shell renders instantly; dynamic parts stream in. Co-locate skeletons with their components — export both from the same file.
+See [Suspense Boundaries](#suspense-boundaries-1) for skeleton co-location and boundary structure guidance.
 
-Transitions interact with Suspense: when you trigger an update inside `startTransition` that causes a component to suspend, the old content stays visible instead of showing the fallback again. This is what makes tab switches and navigation feel smooth.
+### `use()` — Unwrapping Promises and Context
+
+`use()` unwraps a promise or reads a context value during render. When given a promise, it suspends the component until the promise resolves — triggering the nearest `<Suspense>` fallback. Errors reject to the nearest error boundary. Unlike hooks, `use()` can be called conditionally (inside `if` statements, loops, or early returns). For context, `use()` replaces `useContext()` and can also be called conditionally.
 
 ### Deferred Values (Stale-While-Revalidate)
 
-`useDeferredValue` defers re-rendering for a value, keeping old content visible while fresh data loads. Combined with a Suspense-enabled data source, it creates a stale-while-revalidate pattern:
+`useDeferredValue` keeps old content visible while fresh data loads. Combined with a Suspense-enabled data source, it creates a stale-while-revalidate pattern: the input stays responsive, old results remain visible with a stale indicator (`filterText !== deferredFilter`), and fresh data replaces them when ready.
 
-```tsx
-const [filterText, setFilterText] = useState('');
-const deferredFilter = useDeferredValue(filterText);
-const isStale = filterText !== deferredFilter;
-
-<input value={filterText} onChange={e => setFilterText(e.target.value)} />
-<div className={isStale ? 'animate-pulse' : ''}>
-  <Suspense fallback={<Spinner />}>
-    <SearchResults query={deferredFilter} />
-  </Suspense>
-</div>
-```
-
-The input stays responsive. `SearchResults` keeps showing stale results (with a visual indicator) while `useSuspenseQuery` fetches fresh data for the deferred value. On first load, the `<Suspense>` fallback shows; on subsequent changes, old results stay visible. This works with any Suspense-enabled data source — server components, TanStack Query, or `use()` with a cached promise.
+See [Deferred Values](#deferred-values-stale-while-revalidate) for the full search combobox pattern with `useSuspenseQuery`.
 
 ### Form Actions
 
-A form's `action` prop wraps the callback in a transition automatically — same coordination as `startTransition`, but declarative. Prefer form actions over `onClick` for mutations:
+A form's `action` prop wraps the callback in a transition automatically — same coordination as `startTransition`, but declarative. Prefer form actions over `onClick` for mutations. `formAction` on a button works the same way — useful for reusable submit button design components where the consumer keeps a plain `<form>` and the button handles pending state internally.
 
-```tsx
-<form action={async (formData) => {
-  setOptimistic(newValue);
-  await serverAction(formData);
-}}>
-  <button type="submit">Submit</button>
-</form>
-```
-
-`formAction` on a button works the same way — it overrides the form's `action` and auto-wraps in a transition. This is useful for reusable submit button design components: the consumer keeps a plain `<form>`, and the button handles pending state internally via `formAction`:
-
-```tsx
-<form>
-  <input name="content" required />
-  <SubmitButton action={submitAction}>Post</SubmitButton>
-</form>
-
-// Inside SubmitButton — formAction handles the transition
-<button type="submit" formAction={submitAction} disabled={isPending}>
-  {isPending ? 'Posting...' : children}
-</button>
-```
+See [Action Props](#action-props-design-components) for SubmitButton implementations using `formAction` and `useFormStatus`.
 
 ### Action State
 
-`useActionState` manages state derived from the result of an action — like `useReducer` but the reducer can be async and perform side effects. It gives you `isPending` for free and queues actions sequentially (each receives the previous result):
+`useActionState` manages state derived from the result of an action — like `useReducer` but the reducer can be async. It gives you `isPending` for free and queues actions sequentially (each receives the previous result):
 
 ```tsx
-const [state, formAction, isPending] = useActionState(
-  async (prev, formData: FormData) => {
-    const result = await submitForm(formData);
-    if (result.error) return { ...prev, error: result.error };
-    return { error: null, key: prev.key + 1 };
-  },
-  { error: null, key: 0 }
-);
-
-<form action={formAction}>
-  <input name="title" required />
-  {state.error && <p>{state.error}</p>}
-  <button disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-</form>
+const [state, formAction, isPending] = useActionState(reducer, initialState);
 ```
 
-**When to use `useActionState` vs other primitives:**
+**Key-based form reset:** Increment a `key` in the returned state on success. Use that key on the form content to remount and reset all internal state — no manual `resetForm()` needed.
 
 | Need | Use |
 |------|-----|
@@ -269,113 +123,72 @@ const [state, formAction, isPending] = useActionState(
 | Just `isPending` for a one-off action | `useTransition` or `useOptimistic(false)` |
 | All of the above | `useActionState` + `useOptimistic` on top |
 
-**Key-based form reset:** Increment a `key` in the returned state on success. Use that key on the form content to remount and reset all internal state — no manual `resetForm()` needed.
-
-**Combining with `useOptimistic`:** `useOptimistic` reads from `useActionState`'s state and shows instant feedback while the action runs:
-
-```tsx
-const [state, formAction, isPending] = useActionState(updateAction, initialState);
-const [optimisticValue, setOptimistic] = useOptimistic(state.value);
-```
+See [Action State](#action-state-useactionstate) for form with server response, key-based reset, and combining with `useOptimistic`.
 
 ### Action Props Pattern
 
-Design components (tabs, chips, selects, inline editors, toggles) expose an `action` or `changeAction` prop. Internally, the component wraps the callback in `startTransition` with `useOptimistic`. Consumers just swap one prop name — the component handles async coordination:
+Design components (tabs, chips, selects, toggles) expose an `action` or `changeAction` prop. Internally, the component wraps the callback in `startTransition` with `useOptimistic`. Consumers swap one prop name — the component handles async coordination. The naming convention matters: **suffixing with "Action"** signals the callback runs inside a transition. The action prop accepts `void | Promise<void>`, so consumers don't need their own `startTransition`.
 
-```tsx
-// Consumer — one prop change: onChange → changeAction
-<TabList tabs={tabs} activeTab={current} changeAction={value => navigate(value)} />
+Key design decisions:
 
-// Inside the design component
-function TabList({ tabs, activeTab, changeAction }) {
-  const [optimisticTab, setOptimisticTab] = useOptimistic(activeTab);
-  const [isPending, startTransition] = useTransition();
+- Support both `onChange` (synchronous, fires before the transition) and the action prop
+- Include a built-in spinner with a `hideSpinner` opt-out for custom pending UI via `data-pending`
+- Accept `displayValue` as `ReactNode | (value) => ReactNode` for formatted optimistic state
+- Action props aren't needed when the navigation target has `<Suspense>` boundaries — the router handles that
 
-  function handleTabChange(value) {
-    startTransition(async () => {
-      setOptimisticTab(value);
-      await changeAction(value);
-    });
-  }
-}
-```
-
-This pattern belongs in the design layer — custom components, component libraries, design systems. The naming convention matters: **suffixing with "Action"** (e.g., `changeAction`, `submitAction`, `setValueAction`) signals the callback will run inside a transition and that `useOptimistic` setters can be called inside it. The action prop accepts both sync and async functions (`void | Promise<void>`), so consumers don't need their own `startTransition` wrapper.
-
-**`onChange` alongside action props:** Design components should support both. `onChange` fires synchronously before the transition starts — useful for validation, `event.preventDefault()`, or other synchronous side effects. The action prop handles the async coordination.
-
-**Customizing pending UI:** Design components can include a built-in spinner by default. For cases where the consumer needs custom pending treatment, the component can accept a `hideSpinner` prop. The consumer then adds their own `useTransition` and uses `data-pending` for CSS-based feedback on surrounding content.
-
-**`displayValue` for formatted optimistic state:** When the displayed format differs from the raw value (e.g., currency formatting), accept a `displayValue` prop that can be either a static `ReactNode` or a function `(value) => ReactNode`. The function form receives the optimistic value, so the formatted display updates instantly on commit.
-
-**When action props aren't needed:** If the navigation target has `<Suspense>` boundaries, the framework's router already keeps the old page visible. Action props are for instant visual feedback *on the control itself* (tab highlight, pill selection).
+See [Action Props](#action-props-design-components) for TabList, EditableText, and SubmitButton implementations.
 
 ### The `data-pending` CSS Pattern
 
-Show pending states without making parent components client components. Set `data-pending` on the transitioning element, **and add `has-data-pending:` styles on a parent** that should react. Both parts are required — `data-pending` without a parent reacting to it has no visible effect:
+Show pending states without client component wrappers. Set `data-pending` on the transitioning element, **and add `has-data-pending:` styles on a parent** — both parts are required:
 
 ```tsx
 <button data-pending={isPending ? '' : undefined}>Delete</button>
 
 // Any ancestor (even a server component) reacts via CSS
 <div className="has-data-pending:opacity-50">
-  <Card />
-</div>
 ```
 
-For sibling elements, use `group` on a common ancestor:
-
-```tsx
-<div className="group">
-  <FilterBar />   {/* sets data-pending internally */}
-  <div className="group-has-data-pending:opacity-50 transition-opacity">
-    <ContentGrid />
-  </div>
-</div>
-```
+For sibling elements, use `group` on a common ancestor with `group-has-data-pending:` styles. For animating these state changes beyond opacity/pulse, see the `vercel-react-view-transitions` skill.
 
 ---
 
 ## How It All Connects
 
-Transitions create a shared coordination pipeline. Every async operation — navigation, mutations, data fetching — goes through `startTransition`. This means:
+Transitions create a shared coordination pipeline. Every async operation goes through `startTransition`:
 
 - **Navigation + Mutations**: Optimistic updates survive tab switches. The optimistic value persists while the framework fetches new data for the destination.
-- **Mutations + Background Refresh**: A background data refresh arriving mid-action doesn't clobber your optimistic state. When the action completes, `useOptimistic` settles to the latest value.
-- **Suspense + Navigation**: Navigation wrapped in a transition keeps the old page visible while Suspense boundaries on the new page resolve independently.
+- **Mutations + Background Refresh**: A mid-action refresh doesn't clobber optimistic state. Reducers re-run with the latest base value.
+- **Suspense + Navigation**: Old page stays visible while destination boundaries resolve independently.
 
-No competing data layers. Everything goes through React.
+For animating between these states — page transitions, enter/exit animations, shared element animations during navigation — see the `vercel-react-view-transitions` skill.
 
 ---
 
 ## Common Mistakes
 
-- **Forgetting to invalidate after mutations** — The most common bug. `useOptimistic` shows the instant result, the server action succeeds, but without `refresh()` or `updateTag()` in the server action, the server never re-renders. The optimistic value settles to stale data, and navigating away and back shows old state. Every server action that mutates data must invalidate. See the [Next.js Integration](#async-react-in-nextjs) section.
+- **Skipping the audit** — Without classifying interactions first, you'll miss coordination gaps or apply the wrong pattern. See [Step 1: Audit](#step-1-audit-the-app).
+- **Forgetting to invalidate after mutations** — `useOptimistic` shows the instant result, the server action succeeds, but without `updateTag()` or `refresh()`, the server never re-renders. The optimistic value settles to stale data. Every server action that mutates data must invalidate. See [Server Actions + Cache Invalidation](#server-actions--cache-invalidation).
 - **`useState` + `useEffect` for server-derived state** — Creates the coordination problem. Fetch state client-side, manage it locally, and now mutations and navigation don't talk to each other. Fix: server data as props, `useOptimistic` for instant feedback.
 - **`onClick` instead of form `action`** — Form actions get transition wrapping for free. Use `<form action={...}>` for mutations.
 - **Calling `useOptimistic` setter outside an Action** — The setter must be called inside `startTransition` or a form `action`. Outside, React warns and the optimistic value briefly renders then reverts.
 - **Competing data layers** — Don't mix `useOptimistic` with separate `useState` for the same data. One source of truth (server props), one overlay (`useOptimistic`).
-- **Wrong boundary structure** — One big `<Suspense>` at the root means nothing renders until everything loads. But blindly splitting into siblings can cause layout shift (CLS) if a component above has unknown height. Choose boundaries based on the loading state you want for the page. Don't try to fix existing skeleton dimensions or CLS in fallbacks — that's a design concern, not an async coordination concern.
-- **Using updater instead of reducer when base state can change** — If the base data might change while your Action is pending (e.g., from polling), use a reducer. Updaters only see state from when the Transition started; reducers re-run with the latest base value.
-- **Raw `await` on server actions bypasses error boundaries** — Calling `await serverAction()` inside an `onClick` handler is not wrapped in a transition. If the action throws, the error is unhandled — it won't reach `error.tsx`. Wrap in `startTransition` or use a form `action` so errors bubble to the nearest error boundary and `useOptimistic` auto-reverts.
-- **Exporting constants from `"use server"` files** — `"use server"` files can only export async functions. Shared constants (cycle maps, enum lists, option arrays) must live in a separate file (e.g., `data.ts`) and be imported by both the server action and the client component.
-- **`data-pending` without a parent reacting to it** — Setting `data-pending` on a button does nothing by itself. A parent element must have `has-data-pending:` styles (e.g., `has-data-pending:opacity-50`) to create a visible effect. Always add both parts.
-- **Silent optimistic rollback** — `useOptimistic` auto-reverts on failure, but the user sees the UI snap back with no explanation. Pair rollback with user-visible feedback: use `toast.error()` inside a `try/catch` in the transition, or add an `error.tsx` boundary for unexpected failures. The rollback handles the UI; the feedback handles the user.
-- **State updates after `await` fall outside the transition** — Inside an async `startTransition`, state updates after an `await` are not part of the transition. This means cleanup like closing a dialog or resetting a form runs immediately instead of being batched with the re-render. Use a double-transition: wrap post-`await` state updates in another `startTransition`:
+- **Wrong boundary structure** — One big `<Suspense>` means nothing renders until everything loads. But blindly splitting into siblings can cause layout shift (CLS) if a component above has unknown height. Choose boundaries based on the loading state you want for the page.
+- **Using updater instead of reducer when base state can change** — If the base data might change during your Action (e.g., from polling), use a reducer. Updaters only see state from when the transition started; reducers re-run with the latest base value.
+- **Raw `await` on server actions bypasses error boundaries** — `await serverAction()` inside an `onClick` handler is not in a transition. Errors are unhandled. Wrap in `startTransition` or use form `action`.
+- **Exporting constants from `"use server"` files** — Only async functions can be exported. Shared constants must live in a separate file.
+- **`data-pending` without a parent reacting to it** — Setting `data-pending` does nothing by itself. A parent must have `has-data-pending:` styles.
+- **Silent optimistic rollback** — `useOptimistic` auto-reverts on failure, but the user sees no explanation. Pair with `toast.error()` inside a `try/catch`, or an error boundary for unexpected failures.
+- **State updates after `await` fall outside the transition** — Post-`await` cleanup (closing dialogs, resetting forms) runs immediately instead of batching with the re-render. Use a double-transition: wrap post-`await` updates in another `startTransition`. See [Double-Transition Pattern](#double-transition-pattern).
+- **`useState` setters don't clear immediately in transitions** — Unlike `useOptimistic`, `useState` updates are deferred until the transition commits. For immediate form clearing in chat/comment UIs, use `formRef.current?.reset()` (uncontrolled) instead of `setContent('')` (controlled). See [Immediate Form Clearing](#immediate-form-clearing).
 
-```tsx
-startTransition(async () => {
-  addOptimistic(newItem);
-  await createItem(newItem);
-  startTransition(() => {
-    resetForm();
-    setIsOpen(false);
-  });
-});
-```
+---
 
-Without the inner `startTransition`, the dialog closes before the board re-renders with fresh data, causing a flash.
+## When in Doubt
 
+If unsure about the behavior or API of any React primitive (`useOptimistic`, `useActionState`, `useTransition`, `useDeferredValue`, `use`, `Suspense`), consult the official React docs at `https://react.dev/reference/react/<hook-name>` before guessing. These APIs are new and training data may be outdated or incorrect.
+
+---
 ---
 
 # Implementation Workflow
@@ -417,7 +230,7 @@ grep -r "window\.location" --include="*.tsx"       # Hard refreshes → router.r
 - **Every mutation** — Form submissions, button clicks that call server actions. Classify each: does the user expect instant feedback (optimistic), or is confirmation important (pessimistic)?
 - **Every navigation trigger** — Check if the control provides instant visual feedback (tab highlight, filter selection).
 - **Every design component** (tabs, chips, toggles) — Check if they support an `action` prop. If they have `onChange` but not `action`, they're candidates.
-- **Data that updates without user action** — Live feeds, collaborative features. Candidates for background polling (see the [Background Polling](#background-polling) section).
+- **Data that updates without user action** — Live feeds, collaborative features. Candidates for background polling (see [Background Polling](#background-polling)).
 
 Then produce an interaction map:
 
@@ -433,13 +246,7 @@ Then produce an interaction map:
 
 ## Step 2: Add Suspense Boundaries
 
-For every async component, decide: should this block the page, or stream in?
-
-```tsx
-<Suspense fallback={<GridSkeleton />}>
-  <DataGrid />
-</Suspense>
-```
+For every async component, decide: should this block the page, or stream in? See [Suspense Boundaries](#suspense-boundaries-1) for skeleton co-location and boundary structure examples.
 
 **Rules:**
 
@@ -447,40 +254,19 @@ For every async component, decide: should this block the page, or stream in?
 - Co-locate skeletons with their components — export both from the same file.
 - Skeleton fallbacks must match the content layout (same heights, same grid). Otherwise you get CLS.
 - Sibling `<Suspense>` boundaries resolve independently and stream in parallel. Use siblings when components have independent data and predictable sizes.
-- If a component above has an unknown height, sibling boundaries below it will cause layout shift (CLS) when it resolves. In that case, wrap both in a single boundary so the entire region appears at once. Choose the boundary structure that produces the best loading state for the page.
+- If a component above has an unknown height, wrap both in a single boundary to avoid CLS.
 
 ## Step 3: Convert Design Components to Action Props
 
-For every design component that uses `onChange` and triggers a navigation or state update:
-
-1. Check if the component already supports `action` internally (many do)
-2. If yes, just change the consumer: `onChange={handler}` → `action={handler}`
-3. If no, add the pattern inside the component:
-
-```tsx
-function TabNav({ tabs, activeIndex, action, onChange }) {
-  const [optimisticIndex, setOptimisticIndex] = useOptimistic(activeIndex);
-  const [isPending, startTransition] = useTransition();
-
-  function handleClick(value, index) {
-    if (action) {
-      startTransition(async () => {
-        setOptimisticIndex(index);
-        await action(value);
-      });
-    } else {
-      onChange?.(value);
-    }
-  }
-}
-```
+For every design component that uses `onChange` and triggers a navigation or state update, add the action props pattern. See [Action Props](#action-props-design-components) for the full TabList, EditableText, and SubmitButton implementations.
 
 **Rules:**
 
 - Support both `action` and `onChange` for backward compatibility.
 - Set `data-pending` on the component root so consumers can style pending states via CSS.
-- By convention, name callback props with "Action" to signal they'll run inside a transition — this tells consumers they can call `useOptimistic` setters inside them.
-- Action props aren't needed when the destination has `<Suspense>` boundaries — the router handles that. Action props are for instant feedback on the control itself.
+- Name callback props with "Action" to signal they'll run inside a transition.
+- Action props aren't needed when the destination has `<Suspense>` boundaries — the router handles that.
+- For animating tab/filter transitions, see the `vercel-react-view-transitions` skill.
 
 ## Step 4: Fix Legacy State Patterns
 
@@ -488,11 +274,11 @@ For every `useState` + `useEffect` pair that fetches server-derived data:
 
 1. Delete the API endpoint (if created just for this)
 2. Delete the `useEffect` fetch and local `useState`
-3. Pass the data from a server component as a prop — **but first check if the data is actually server-only.** Constants (enums, option lists, static arrays) can often be imported directly in client components. Don't add server component props for data that's just a constant in a shared file.
+3. Pass the data from a server component as a prop — **but first check if the data is actually server-only.** Constants (enums, option lists, static arrays) can often be imported directly in client components.
 4. Add `useOptimistic` for instant feedback on mutations
 5. Use form `action` instead of `onClick`
-6. **Ensure the server action invalidates** — call `refresh()` or `updateTag()` after mutating data. Without this, `useOptimistic` settles but the *next* render still shows stale data.
-7. **Remove `key` props used to force remounts on data changes** — When migrating from `useState(initialValue)` to `useOptimistic(serverValue)`, remove any `key` prop used to reset state when props change. `useOptimistic` tracks the base value automatically; `key`-based remounting is only needed for `useState`.
+6. **Ensure the server action invalidates** — call `updateTag()` or `refresh()` after mutating data. See [Server Actions + Cache Invalidation](#server-actions--cache-invalidation).
+7. **Remove `key` props used to force remounts on data changes** — `useOptimistic` tracks the base value automatically; `key`-based remounting is only needed for `useState`.
 
 **Before (broken coordination):**
 ```tsx
@@ -519,176 +305,48 @@ const [optimistic, setOptimistic] = useOptimistic(hasFavorited); // prop from se
 }}>
 ```
 
-Server component passes `hasFavorited` as a prop. `useOptimistic` provides instant toggle. Form action wraps in a transition. Mutations and navigation now coordinate through the same system.
-
-**Critical: the server action must invalidate.** Without `refresh()` or `updateTag()`, the optimistic update shows instantly but the server never re-renders — so navigating away and back shows stale data.
+Server component passes `hasFavorited` as a prop. `useOptimistic` provides instant toggle. Form action wraps in a transition. Mutations and navigation now coordinate through the same system. **The server action must invalidate** — without `updateTag()` or `refresh()`, the optimistic value settles but server data stays stale.
 
 ## Step 5: Add Optimistic Updates
 
-For every mutation where the user expects instant feedback:
+For every mutation where the user expects instant feedback, apply the appropriate pattern from [Optimistic Mutations](#optimistic-mutations):
 
-### Toggle
-```tsx
-const [optimistic, setOptimistic] = useOptimistic(serverValue);
-
-<form action={async () => {
-  setOptimistic(!optimistic);
-  await toggleAction(id);
-}}>
-```
-
-### Multi-value (use a reducer)
-```tsx
-const [optimistic, dispatch] = useOptimistic(
-  { isFollowing, followerCount },
-  (current, shouldFollow) => ({
-    isFollowing: shouldFollow,
-    followerCount: current.followerCount + (shouldFollow ? 1 : -1),
-  })
-);
-```
-
-### One-way
-```tsx
-const [optimistic, setOptimistic] = useOptimistic(
-  { count: voteCount, hasVoted },
-  (state) => ({ count: state.count + 1, hasVoted: true })
-);
-```
-
-### List add
-```tsx
-const [optimisticItems, addOptimistic] = useOptimistic(
-  items,
-  (state, newItem) => {
-    if (state.some(i => i.id === newItem.id)) return state;
-    return [...state, { ...newItem, pending: true }];
-  }
-);
-
-async function submitAction(formData: FormData) {
-  const id = crypto.randomUUID();
-  addOptimistic({ id, text: formData.get('text') });
-  const result = await createItem(id, formData);
-  if (result.error) toast.error(result.error);
-}
-```
-
-### Move between groups
-```tsx
-const [optimisticItems, moveItem] = useOptimistic(
-  items,
-  (state, { id, newGroup }) =>
-    state.map(item => item.id === id ? { ...item, group: newGroup } : item)
-);
-
-function handleMove(id, newGroup) {
-  startTransition(async () => {
-    moveItem({ id, newGroup });
-    await updateGroup(id, newGroup);
-  });
-}
-```
-
-### Optimistic delete
-```tsx
-const [optimisticItems, removeItem] = useOptimistic(
-  items,
-  (currentItems, idToRemove) =>
-    currentItems.map(item =>
-      item.id === idToRemove ? { ...item, deleting: true } : item
-    )
-);
-```
+- **Toggle** (favorite, like) — Boolean `useOptimistic` with form `action`
+- **Multi-value** (follow with count) — Reducer form of `useOptimistic`
+- **One-way** (upvote) — Reducer that increments and disables
+- **List add** (create item) — Reducer with `crypto.randomUUID()` dedup
+- **Move between groups** (Kanban) — Reducer that remaps the group field
+- **Optimistic delete** — Reducer that marks `deleting: true`
+- **Immediate form clearing** (chat/comment) — `formRef.current?.reset()` before `await`
 
 **Rules:**
-- The setter must be called inside an Action (`startTransition` or form `action`). Inside an Action prop, call it directly.
-- Use reducers (not updaters) when the base state might change during the Action — reducers re-run with the latest base value.
-- `useOptimistic` rolls back automatically on failure. Pair rollback with user-visible feedback — a toast or inline error message — so the user understands why the UI reverted. Silent rollback with no feedback is confusing.
-- For list adds, generate a UUID on the client and pass it to the server to prevent duplicate flash.
-- Dedup in the reducer when using background polling.
-- **Every server action that mutates data must invalidate** — call `refresh()` or `updateTag()` so server components re-render with fresh data. Optimistic updates are an overlay; without invalidation, the base data never updates.
+
+- The setter must be called inside an Action (`startTransition` or form `action`).
+- Use reducers (not updaters) when the base state might change during the Action.
+- Pair rollback with user-visible feedback (`toast.error()` or error boundary).
+- For list adds, generate a UUID on the client and pass it to the server.
+- Every server action that mutates data must call `updateTag()` or `refresh()`.
 
 ### Shared mutation logic
-When the client needs to predict the server result for an optimistic update (e.g., cycling through enum values: low → medium → high → low), extract the logic into a shared constant or pure function. **Do not put constants in `"use server"` files** — those can only export async functions. Put shared constants in a separate file (e.g., `data.ts`, `constants.ts`) and import from both the server action and the client component:
 
-```tsx
-// data.ts (shared — not "use server")
-export const PRIORITY_CYCLE: Record<Priority, Priority> = {
-  low: 'medium', medium: 'high', high: 'low',
-};
-
-// actions.ts ("use server")
-import { PRIORITY_CYCLE } from './data';
-
-export async function cyclePriority(id: string) {
-  // uses PRIORITY_CYCLE internally
-}
-```
-
-The client imports `PRIORITY_CYCLE` from `data.ts` to compute the optimistic value without duplicating the logic.
+When the client needs to predict the server result (e.g., cycling enum values), extract the logic into a shared constant. **Do not put constants in `"use server"` files** — put them in a separate file (e.g., `data.ts`) and import from both the server action and the client component.
 
 ### Complex forms with controlled state
-For modals or forms with many fields (multi-select, radio groups, dependent selects), keep `useState` for the UI controls. Wrap the submission in a `<form action>` that reads from the controlled state directly — form actions accept closures, not just `FormData`:
 
-```tsx
-const [labels, setLabels] = useState<string[]>([]);
-const [priority, setPriority] = useState('medium');
+Keep `useState` for complex UI controls (multi-select, dependent selects). Wrap submission in `<form action>` that reads from controlled state directly. This is not the `useState` anti-pattern — controlled state for complex UI is fine. The anti-pattern is `useState` for **server-derived data** or **mutation results**.
 
-<form action={async () => {
-  addOptimistic({ labels, priority, ... });
-  await createItem({ labels, priority, ... });
-}}>
-  {/* controlled inputs for complex UI */}
-  <button type="submit">Create</button>
-</form>
-```
+### Post-await state updates
 
-This is not a `useState` anti-pattern — controlled state for complex UI is fine. The anti-pattern is using `useState` for **server-derived data** or **mutation results**.
-
-### Post-await state updates (double-transition)
-
-State updates after `await` inside an async `startTransition` fall outside the transition scope. If you close a dialog or reset a form after awaiting a server action, those updates run immediately — before `refresh()` re-renders the page with fresh data.
-
-Wrap post-`await` state updates in another `startTransition`:
-
-```tsx
-<form action={async () => {
-  addOptimistic(newItem);
-  await createItem(newItem);
-  startTransition(() => {
-    resetForm();
-    setIsOpen(false);
-  });
-}}>
-```
-
-Without the inner `startTransition`, the dialog closes while the page still shows stale data, causing a visual flash.
+State updates after `await` inside `startTransition` fall outside the transition scope. Wrap post-`await` updates in another `startTransition`. See [Double-Transition Pattern](#double-transition-pattern).
 
 ## Step 6: Add Pending Feedback
 
-For interactions where you want to show "working" without optimistic results, use `useTransition` + `data-pending`:
-
-```tsx
-const [isPending, startTransition] = useTransition();
-
-<button
-  data-pending={isPending ? '' : undefined}
-  disabled={isPending}
-  onClick={() => startTransition(async () => await deleteAction(id))}
->
-```
-
-Parent (can be a server component):
-```tsx
-<div className="has-data-pending:opacity-50 transition-opacity">
-  <Card />
-</div>
-```
+For interactions where you want "working" feedback without optimistic results, use `useTransition` + `data-pending`. See [Pessimistic Mutations](#pessimistic-mutations-data-pending) for the DeleteButton and grouped pending examples.
 
 **Rules:**
-- `data-pending` + CSS `:has()` bubbles pending state up without client component wrappers.
-- For grouped regions, use `group-has-data-pending:opacity-50`.
+
+- `data-pending` requires a parent with `has-data-pending:` styles to create a visible effect. Always add both parts.
+- For grouped regions, use `group-has-data-pending:`.
 
 ## Step 7: Verify
 
@@ -700,24 +358,16 @@ Walk through every row in the interaction map from Step 1:
 - Do mutations persist after navigation? (Mutate, navigate away, navigate back — fresh data shows)
 - Do mutations survive navigation? (Toggle, then switch tabs — no stale data)
 - Does background refresh coordinate with user actions? (Action mid-poll — no clobber)
-- Does every server action call `refresh()` or `updateTag()`? (Without this, optimistic updates settle but server data is stale)
+- Does every server action call `updateTag()` or `refresh()`?
 - Do errors surface correctly? (Unexpected → error boundary, expected → toast)
+- Are state changes animated? (See the `vercel-react-view-transitions` skill for page transitions, enter/exit, and shared element animations)
 
 ---
-
-### Common Implementation Mistakes
-
-- **Skipping the audit** — Without classifying interactions, you'll miss coordination gaps or apply the wrong pattern.
-- **Wrong boundary structure** — Siblings resolve in parallel but can cause CLS if sizes are unknown. A shared boundary avoids layout shift. Choose boundaries based on the loading state you want, not a blanket rule.
-- **Using updaters when base state can change** — If polling or other users can change the base data during your Action, use a reducer so React re-runs it with the latest data.
-- **Mixing `useState` with `useOptimistic` for the same data** — One source of truth: server props in, `useOptimistic` as overlay.
-- **Action props on cross-route navigation** — If the destination has Suspense, the router handles it.
-
 ---
 
 # Async React Patterns
 
-Code reference for each primitive. For framework-specific patterns (Next.js server actions, router, background polling), see the [Next.js Integration](#async-react-in-nextjs) section.
+Code reference for each primitive. See [Implementation Workflow](#implementation-workflow-1) for the step-by-step workflow. For framework-specific patterns (Next.js server actions, router, background polling), see [Async React in Next.js](#async-react-in-nextjs).
 
 ---
 
@@ -834,7 +484,7 @@ export function TabList({ tabs, activeTab, changeAction, onChange }: TabListProp
 }
 ```
 
-`onChange` fires synchronously before the transition starts — useful for validation or `event.preventDefault()`. The action prop handles the async coordination.
+`isPending` is derived by comparing the optimistic value to the server value — no `useTransition` needed. `onChange` fires synchronously before the transition starts — useful for validation or `event.preventDefault()`. The action prop handles the async coordination. For animating the tab switch itself, see the `vercel-react-view-transitions` skill.
 
 ### Consumer Usage
 
@@ -957,6 +607,36 @@ export function SubmitButton({ children, action, onSubmit, disabled, ...props }:
 **Why `formAction` on the button instead of `action` on the form:** The consumer keeps a plain `<form>` and drops in `<SubmitButton>` — the button's `formAction` overrides the form's `action`. This makes the design component composable: the consumer controls the form, the button handles pending state. No `startTransition` needed — `formAction` wraps in a transition automatically.
 
 **`onSubmit` callback:** Fires synchronously before the transition starts — useful for immediate side effects like clearing an input or closing a dropdown (same role as `onChange` on action-prop design components).
+
+### SubmitButton — useFormStatus Alternative
+
+`useFormStatus` reads the pending state of a parent `<form>`. It's a child-component pattern — the button must be a child of a `<form>` with an `action` prop:
+
+```tsx
+'use client';
+
+import { useFormStatus } from 'react-dom';
+
+export function SubmitButton({ children, disabled, ...props }: React.ComponentProps<'button'>) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" disabled={pending || disabled} {...props}>
+      {pending ? 'Submitting...' : children}
+    </button>
+  );
+}
+```
+
+**`useFormStatus` vs `useOptimistic(false)` vs `formAction`:**
+
+| Pattern | Where pending lives | Works with |
+|---------|-------------------|------------|
+| `useFormStatus` | Reads parent form's pending state | Must be child of `<form action={...}>` |
+| `useOptimistic(false)` | Self-contained in the button | Any form, `formAction` on button |
+| `formAction` on button | Button overrides form's action | Composable — consumer keeps plain `<form>` |
+
+Use `useFormStatus` when the form's `action` is already set and you want a simple child button. Use `useOptimistic(false)` + `formAction` when the button needs to own the action (design component pattern).
 
 ---
 
@@ -1096,56 +776,38 @@ Pass the client-generated ID to the server action so the optimistic item and rea
 
 ### Immediate Form Clearing
 
-For chat/comment UIs, the input should clear immediately when the user submits — not after the server responds. Two approaches:
-
-**Controlled input — save value, clear state, pass saved value:**
+For chat/comment UIs, the input should clear immediately when the user submits — not after the server responds. Use an uncontrolled input with `formRef.current?.reset()`:
 
 ```tsx
 'use client';
 
-import { useState, useOptimistic, useRef } from 'react';
+import { useOptimistic, useRef } from 'react';
 
 export function CommentForm({ addAction }: { addAction: (content: string) => Promise<void> }) {
-  const [content, setContent] = useState('');
   const [isPending, setIsPending] = useOptimistic(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <form
       ref={formRef}
-      action={async () => {
-        if (!content.trim()) return;
+      action={async (formData) => {
+        const text = (formData.get('content') as string)?.trim();
+        if (!text) return;
         setIsPending(true);
-        const text = content;
-        setContent('');
+        formRef.current?.reset();
         await addAction(text);
       }}
     >
-      <input value={content} onChange={e => setContent(e.target.value)} disabled={isPending} />
-      <button type="submit" disabled={!content.trim() || isPending}>Send</button>
+      <input name="content" required disabled={isPending} />
+      <button type="submit" disabled={isPending}>Send</button>
     </form>
   );
 }
 ```
 
-The key: save `content` to a local variable *before* clearing. `setContent('')` runs inside the transition so the input clears optimistically. The saved `text` is passed to the action.
+`formRef.current?.reset()` directly manipulates the DOM, so it clears the input synchronously before the `await`. `setIsPending(true)` uses `useOptimistic` and also updates immediately. React's automatic form reset after `formAction` completes would also clear the input, but only *after* the action finishes — `formRef.reset()` makes it immediate.
 
-**Uncontrolled input — `formRef.reset()` before await:**
-
-```tsx
-async function submitAction(formData: FormData) {
-  formRef.current?.reset();
-  const result = await addComment(slug, formData);
-  if (!result.success) toast.error(result.error);
-}
-
-<form ref={formRef}>
-  <input name="content" required />
-  <SubmitButton action={submitAction}>Post</SubmitButton>
-</form>
-```
-
-Call `formRef.current?.reset()` at the top of the action — the input clears before the `await`. This works with uncontrolled inputs where you read values from `FormData`. Note: React's automatic form reset after `formAction` completes would also clear the input, but only *after* the action finishes — `formRef.reset()` makes it immediate.
+**Why not controlled inputs?** `useState` setters are deferred inside transitions — `setContent('')` inside a form `action` does NOT clear the input until the transition commits (after the `await`). Only `useOptimistic` setters and direct DOM manipulation (`formRef.reset()`) update immediately.
 
 ---
 
@@ -1344,6 +1006,8 @@ function CreateDialog({ action }) {
       <form action={async (formData) => {
         setIsPending(true);
         await action(formData);
+        // Without inner startTransition, dialog closes before
+        // the board re-renders with fresh data — causes a flash
         startTransition(() => {
           setIsOpen(false);
         });
@@ -1372,6 +1036,7 @@ Toggle a favorite, then switch to a filtered view. Both go through the transitio
 A background data refresh arrives mid-action. If using a reducer, React re-runs it with the updated base data — your optimistic addition sits on top of the latest list. When the action completes, the optimistic overlay settles.
 
 ---
+---
 
 # Async React in Next.js
 
@@ -1385,38 +1050,41 @@ Server actions are the mutation layer. They run on the server and integrate with
 
 **Every server action that mutates data must invalidate.** Without invalidation, `useOptimistic` shows the instant result but the server never re-renders — so the optimistic value settles to stale data, and navigating away and back shows old state.
 
-Two invalidation methods:
+Three invalidation functions (all from `next/cache`):
 
-- **`refresh()`** — Invalidates the entire client router cache. The simplest option: import from `next/cache` and call at the end of the server action. Use when you don't have granular cache tags.
-- **`updateTag(tag)`** — Marks specific cached entries as stale. More targeted: only server components using `cacheTag(tag)` re-render. Use when your queries have cache tags.
+- **`updateTag(tag)`** — Immediately expires cached data for a tag. **Server Actions only.** Designed for read-your-own-writes — the user sees fresh data on the next render, not stale content. This is the primary invalidation method when using `'use cache'` + `cacheTag`.
+- **`revalidateTag(tag, 'max')`** — Marks tagged data as stale with stale-while-revalidate semantics (serves cached content while fetching fresh in the background). Works in Server Actions **and** Route Handlers. The single-argument form `revalidateTag(tag)` is deprecated — always pass a profile.
+- **`refresh()`** — Refreshes the client router, causing server components to re-render for the current user. Does **not** revalidate tagged cache entries — use alongside `updateTag` or `revalidateTag` when you have cache tags.
 
-**Verify the import exists** — `refresh()` is a Next.js 16 API. Before using it, confirm it's available: `grep 'refresh' node_modules/next/cache.js`. If not found, fall back to `revalidatePath('/')` from `next/cache`.
+**Which to use:**
+
+- **Apps without `'use cache'`**: `refresh()` alone is sufficient — server components re-render with fresh data.
+- **Apps with `'use cache'` + `cacheTag`**: Use `updateTag(tag)` to invalidate cached entries. Add `refresh()` if the current page also needs to re-render immediately.
+- **Route Handlers / webhooks**: Use `revalidateTag(tag, 'max')` — `updateTag` is not available outside Server Actions.
 
 ```tsx
 'use server';
 
-import { refresh } from 'next/cache';
+import { refresh, updateTag } from 'next/cache';
 
 export async function toggleStar(taskId: string) {
   await db.star.toggle({ where: { taskId, userId } });
   refresh();
 }
-```
 
-```tsx
-'use server';
-
-import { updateTag } from 'next/cache';
-
-export async function deleteComment(id: string, eventSlug: string) {
-  await db.comment.delete({ where: { id } });
-  updateTag(`comments-${eventSlug}`);
+export async function updatePost(slug: string, formData: FormData) {
+  await db.post.update({ where: { slug }, data: { ... } });
+  updateTag('posts');
+  updateTag(`post-${slug}`);
+  refresh();
 }
 ```
 
+`updateTag` immediately expires the cached query entries; `refresh()` forces the current user's page to re-render. Both together ensure optimistic updates settle to fresh data.
+
 ### The Flow
 
-User submits → `useOptimistic` shows instant result → server action runs → `refresh()` or `updateTag()` invalidates → server components re-render → optimistic value settles to real data.
+User submits → `useOptimistic` shows instant result → server action runs → `updateTag()` expires cache + `refresh()` re-renders → optimistic value settles to real data.
 
 **If you forget the invalidation call:** the optimistic update shows instantly, the mutation succeeds on the server, but the UI never updates with the real data. This is the most common bug when applying the skill.
 
@@ -1489,6 +1157,8 @@ The App Router wraps every `<Link>` navigation in `startTransition`. This means:
 - Old page stays visible and interactive while the new page loads
 - `<Suspense>` boundaries on the destination page resolve independently
 
+For animating these navigation transitions (cross-fade, slide, shared elements), see the `vercel-react-view-transitions` skill.
+
 ### `router.push()` in Transitions
 
 When called inside a `startTransition`, it coordinates with `useOptimistic` in the same transition:
@@ -1502,6 +1172,26 @@ startTransition(async () => {
 ```
 
 This is what makes action props work with Next.js navigation — the design component calls `startTransition`, sets optimistic state, and `await`s the `router.push()` passed via the action prop.
+
+---
+
+## Promise-Passing from Server Components
+
+Server components can start a fetch without awaiting it, passing the **promise** as a prop to a client component. The client uses `use()` (see [Core Concepts](#use--unwrapping-promises-and-context)) to unwrap it — enabling streaming without blocking the server render:
+
+```tsx
+// Server component — starts fetch, doesn't await
+async function ChartWrapper({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+  const { filter } = await searchParams;
+  const dataPromise = getChartData(filter);
+  return <Chart data={dataPromise} />;
+}
+```
+
+The server component renders immediately and streams the promise to the client. The client component suspends (showing the nearest `<Suspense>` fallback) until the promise resolves. This is useful when:
+
+- The client component needs the raw data for interactivity (charts, drag-and-drop)
+- Multiple client components share the same promise (start one fetch, pass to siblings)
 
 ---
 
@@ -1534,9 +1224,3 @@ Because the refresh runs inside `startTransition`, it coordinates with `useOptim
 ## Error Boundaries
 
 Next.js `error.tsx` files create error boundaries. Errors thrown inside transitions — including server action failures — automatically bubble to the nearest `error.tsx`. Use toast for expected errors to prevent the boundary from catching them.
-
----
-
-## When in Doubt
-
-If unsure about the behavior or API of any React primitive (`useOptimistic`, `useActionState`, `useTransition`, `useDeferredValue`, `use`, `Suspense`), consult the official React docs at `https://react.dev/reference/react/<hook-name>` before guessing. These APIs are new and training data may be outdated or incorrect.

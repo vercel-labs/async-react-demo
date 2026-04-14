@@ -46,7 +46,7 @@ export function CreateTaskModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[13px] text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70">
+      <DialogTrigger className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[13px] text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70">
         <Plus className="size-3.5" />
         New Task
       </DialogTrigger>

@@ -10,38 +10,41 @@ Server actions are the mutation layer. They run on the server and integrate with
 
 **Every server action that mutates data must invalidate.** Without invalidation, `useOptimistic` shows the instant result but the server never re-renders — so the optimistic value settles to stale data, and navigating away and back shows old state.
 
-Two invalidation methods:
+Three invalidation functions (all from `next/cache`):
 
-- **`refresh()`** — Invalidates the entire client router cache. The simplest option: import from `next/cache` and call at the end of the server action. Use when you don't have granular cache tags.
-- **`updateTag(tag)`** — Marks specific cached entries as stale. More targeted: only server components using `cacheTag(tag)` re-render. Use when your queries have cache tags.
+- **`updateTag(tag)`** — Immediately expires cached data for a tag. **Server Actions only.** Designed for read-your-own-writes — the user sees fresh data on the next render, not stale content. This is the primary invalidation method when using `'use cache'` + `cacheTag`.
+- **`revalidateTag(tag, 'max')`** — Marks tagged data as stale with stale-while-revalidate semantics (serves cached content while fetching fresh in the background). Works in Server Actions **and** Route Handlers. The single-argument form `revalidateTag(tag)` is deprecated — always pass a profile.
+- **`refresh()`** — Refreshes the client router, causing server components to re-render for the current user. Does **not** revalidate tagged cache entries — use alongside `updateTag` or `revalidateTag` when you have cache tags.
 
-**Verify the import exists** — `refresh()` is a Next.js 16 API. Before using it, confirm it's available: `grep 'refresh' node_modules/next/cache.js`. If not found, fall back to `revalidatePath('/')` from `next/cache`.
+**Which to use:**
+
+- **Apps without `'use cache'`**: `refresh()` alone is sufficient — server components re-render with fresh data.
+- **Apps with `'use cache'` + `cacheTag`**: Use `updateTag(tag)` to invalidate cached entries. Add `refresh()` if the current page also needs to re-render immediately.
+- **Route Handlers / webhooks**: Use `revalidateTag(tag, 'max')` — `updateTag` is not available outside Server Actions.
 
 ```tsx
 'use server';
 
-import { refresh } from 'next/cache';
+import { refresh, updateTag } from 'next/cache';
 
 export async function toggleStar(taskId: string) {
   await db.star.toggle({ where: { taskId, userId } });
   refresh();
 }
-```
 
-```tsx
-'use server';
-
-import { updateTag } from 'next/cache';
-
-export async function deleteComment(id: string, eventSlug: string) {
-  await db.comment.delete({ where: { id } });
-  updateTag(`comments-${eventSlug}`);
+export async function updatePost(slug: string, formData: FormData) {
+  await db.post.update({ where: { slug }, data: { ... } });
+  updateTag('posts');
+  updateTag(`post-${slug}`);
+  refresh();
 }
 ```
 
+`updateTag` immediately expires the cached query entries; `refresh()` forces the current user's page to re-render. Both together ensure optimistic updates settle to fresh data.
+
 ### The Flow
 
-User submits → `useOptimistic` shows instant result → server action runs → `refresh()` or `updateTag()` invalidates → server components re-render → optimistic value settles to real data.
+User submits → `useOptimistic` shows instant result → server action runs → `updateTag()` expires cache + `refresh()` re-renders → optimistic value settles to real data.
 
 **If you forget the invalidation call:** the optimistic update shows instantly, the mutation succeeds on the server, but the UI never updates with the real data. This is the most common bug when applying the skill.
 
@@ -114,6 +117,8 @@ The App Router wraps every `<Link>` navigation in `startTransition`. This means:
 - Old page stays visible and interactive while the new page loads
 - `<Suspense>` boundaries on the destination page resolve independently
 
+For animating these navigation transitions (cross-fade, slide, shared elements), see the `vercel-react-view-transitions` skill.
+
 ### `router.push()` in Transitions
 
 When called inside a `startTransition`, it coordinates with `useOptimistic` in the same transition:
@@ -127,6 +132,26 @@ startTransition(async () => {
 ```
 
 This is what makes action props work with Next.js navigation — the design component calls `startTransition`, sets optimistic state, and `await`s the `router.push()` passed via the action prop.
+
+---
+
+## Promise-Passing from Server Components
+
+Server components can start a fetch without awaiting it, passing the **promise** as a prop to a client component. The client uses `use()` (see Core Concepts in `SKILL.md`) to unwrap it — enabling streaming without blocking the server render:
+
+```tsx
+// Server component — starts fetch, doesn't await
+async function ChartWrapper({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+  const { filter } = await searchParams;
+  const dataPromise = getChartData(filter);
+  return <Chart data={dataPromise} />;
+}
+```
+
+The server component renders immediately and streams the promise to the client. The client component suspends (showing the nearest `<Suspense>` fallback) until the promise resolves. This is useful when:
+
+- The client component needs the raw data for interactivity (charts, drag-and-drop)
+- Multiple client components share the same promise (start one fetch, pass to siblings)
 
 ---
 

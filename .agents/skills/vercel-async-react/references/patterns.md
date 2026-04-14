@@ -117,7 +117,7 @@ export function TabList({ tabs, activeTab, changeAction, onChange }: TabListProp
 }
 ```
 
-`isPending` is derived by comparing the optimistic value to the server value — no `useTransition` needed. `onChange` fires synchronously before the transition starts — useful for validation or `event.preventDefault()`. The action prop handles the async coordination.
+`isPending` is derived by comparing the optimistic value to the server value — no `useTransition` needed. `onChange` fires synchronously before the transition starts — useful for validation or `event.preventDefault()`. The action prop handles the async coordination. For animating the tab switch itself, see the `vercel-react-view-transitions` skill.
 
 ### Consumer Usage
 
@@ -240,6 +240,36 @@ export function SubmitButton({ children, action, onSubmit, disabled, ...props }:
 **Why `formAction` on the button instead of `action` on the form:** The consumer keeps a plain `<form>` and drops in `<SubmitButton>` — the button's `formAction` overrides the form's `action`. This makes the design component composable: the consumer controls the form, the button handles pending state. No `startTransition` needed — `formAction` wraps in a transition automatically.
 
 **`onSubmit` callback:** Fires synchronously before the transition starts — useful for immediate side effects like clearing an input or closing a dropdown (same role as `onChange` on action-prop design components).
+
+### SubmitButton — useFormStatus Alternative
+
+`useFormStatus` reads the pending state of a parent `<form>`. It's a child-component pattern — the button must be a child of a `<form>` with an `action` prop:
+
+```tsx
+'use client';
+
+import { useFormStatus } from 'react-dom';
+
+export function SubmitButton({ children, disabled, ...props }: React.ComponentProps<'button'>) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" disabled={pending || disabled} {...props}>
+      {pending ? 'Submitting...' : children}
+    </button>
+  );
+}
+```
+
+**`useFormStatus` vs `useOptimistic(false)` vs `formAction`:**
+
+| Pattern | Where pending lives | Works with |
+|---------|-------------------|------------|
+| `useFormStatus` | Reads parent form's pending state | Must be child of `<form action={...}>` |
+| `useOptimistic(false)` | Self-contained in the button | Any form, `formAction` on button |
+| `formAction` on button | Button overrides form's action | Composable — consumer keeps plain `<form>` |
+
+Use `useFormStatus` when the form's `action` is already set and you want a simple child button. Use `useOptimistic(false)` + `formAction` when the button needs to own the action (design component pattern).
 
 ---
 
@@ -379,56 +409,38 @@ Pass the client-generated ID to the server action so the optimistic item and rea
 
 ### Immediate Form Clearing
 
-For chat/comment UIs, the input should clear immediately when the user submits — not after the server responds. Two approaches:
-
-**Controlled input — save value, clear state, pass saved value:**
+For chat/comment UIs, the input should clear immediately when the user submits — not after the server responds. Use an uncontrolled input with `formRef.current?.reset()`:
 
 ```tsx
 'use client';
 
-import { useState, useOptimistic, useRef } from 'react';
+import { useOptimistic, useRef } from 'react';
 
 export function CommentForm({ addAction }: { addAction: (content: string) => Promise<void> }) {
-  const [content, setContent] = useState('');
   const [isPending, setIsPending] = useOptimistic(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <form
       ref={formRef}
-      action={async () => {
-        if (!content.trim()) return;
+      action={async (formData) => {
+        const text = (formData.get('content') as string)?.trim();
+        if (!text) return;
         setIsPending(true);
-        const text = content;
-        setContent('');
+        formRef.current?.reset();
         await addAction(text);
       }}
     >
-      <input value={content} onChange={e => setContent(e.target.value)} disabled={isPending} />
-      <button type="submit" disabled={!content.trim() || isPending}>Send</button>
+      <input name="content" required disabled={isPending} />
+      <button type="submit" disabled={isPending}>Send</button>
     </form>
   );
 }
 ```
 
-The key: save `content` to a local variable *before* clearing. `setContent('')` runs inside the transition so the input clears optimistically. The saved `text` is passed to the action.
+`formRef.current?.reset()` directly manipulates the DOM, so it clears the input synchronously before the `await`. `setIsPending(true)` uses `useOptimistic` and also updates immediately. React's automatic form reset after `formAction` completes would also clear the input, but only *after* the action finishes — `formRef.reset()` makes it immediate.
 
-**Uncontrolled input — `formRef.reset()` before await:**
-
-```tsx
-async function submitAction(formData: FormData) {
-  formRef.current?.reset();
-  const result = await addComment(slug, formData);
-  if (!result.success) toast.error(result.error);
-}
-
-<form ref={formRef}>
-  <input name="content" required />
-  <SubmitButton action={submitAction}>Post</SubmitButton>
-</form>
-```
-
-Call `formRef.current?.reset()` at the top of the action — the input clears before the `await`. This works with uncontrolled inputs where you read values from `FormData`. Note: React's automatic form reset after `formAction` completes would also clear the input, but only *after* the action finishes — `formRef.reset()` makes it immediate.
+**Why not controlled inputs?** `useState` setters are deferred inside transitions — `setContent('')` inside a form `action` does NOT clear the input until the transition commits (after the `await`). Only `useOptimistic` setters and direct DOM manipulation (`formRef.reset()`) update immediately.
 
 ---
 
