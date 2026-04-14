@@ -41,7 +41,7 @@ This is an implementation order, not a "pick one" list. Implement every pattern 
 
 For animations on these state changes, see the `vercel-react-view-transitions` skill.
 
-For framework-specific integration (Next.js server actions, `updateTag()`, router behavior, background polling), see `references/nextjs.md`.
+For framework-specific integration (Next.js server actions, `refresh()`/`updateTag()` invalidation, router behavior, background polling), see `references/nextjs.md`. **Every server action that mutates data must call `refresh()` or `updateTag()`** — without this, optimistic updates settle to stale data.
 
 ---
 
@@ -237,6 +237,7 @@ No competing data layers. Everything goes through React.
 
 ## Common Mistakes
 
+- **Forgetting to invalidate after mutations** — The most common bug. `useOptimistic` shows the instant result, the server action succeeds, but without `refresh()` or `updateTag()` in the server action, the server never re-renders. The optimistic value settles to stale data, and navigating away and back shows old state. Every server action that mutates data must invalidate. See `references/nextjs.md`.
 - **`useState` + `useEffect` for server-derived state** — Creates the coordination problem. Fetch state client-side, manage it locally, and now mutations and navigation don't talk to each other. Fix: server data as props, `useOptimistic` for instant feedback.
 - **`onClick` instead of form `action`** — Form actions get transition wrapping for free. Use `<form action={...}>` for mutations.
 - **Calling `useOptimistic` setter outside an Action** — The setter must be called inside `startTransition` or a form `action`. Outside, React warns and the optimistic value briefly renders then reverts.

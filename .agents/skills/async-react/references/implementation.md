@@ -100,6 +100,7 @@ For every `useState` + `useEffect` pair that fetches server-derived data:
 3. Pass the data from a server component as a prop
 4. Add `useOptimistic` for instant feedback on mutations
 5. Use form `action` instead of `onClick`
+6. **Ensure the server action invalidates** — call `refresh()` or `updateTag()` after mutating data (see `nextjs.md`). Without this, `useOptimistic` settles but the *next* render still shows stale data.
 
 **Before (broken coordination):**
 ```tsx
@@ -127,6 +128,8 @@ const [optimistic, setOptimistic] = useOptimistic(hasFavorited); // prop from se
 ```
 
 Server component passes `hasFavorited` as a prop. `useOptimistic` provides instant toggle. Form action wraps in a transition. Mutations and navigation now coordinate through the same system.
+
+**Critical: the server action must invalidate.** Without `refresh()` or `updateTag()`, the optimistic update shows instantly but the server never re-renders — so navigating away and back shows stale data. See `nextjs.md` for the invalidation patterns.
 
 ## Step 5: Add Optimistic Updates
 
@@ -196,6 +199,7 @@ const [optimisticItems, removeItem] = useOptimistic(
 - `useOptimistic` rolls back automatically on failure. Add a toast for user feedback.
 - For list adds, generate a UUID on the client and pass it to the server to prevent duplicate flash.
 - Dedup in the reducer when using background polling.
+- **Every server action that mutates data must invalidate** — call `refresh()` or `updateTag()` so server components re-render with fresh data. Optimistic updates are an overlay; without invalidation, the base data never updates.
 
 ## Step 6: Add Pending Feedback
 
@@ -229,8 +233,10 @@ Walk through every row in the interaction map from Step 1:
 - Does loading avoid layout shift? (Skeleton matches content)
 - Does the mutation provide feedback? (Optimistic or pending indicator)
 - Does navigation feel responsive? (Controls highlight immediately)
+- Do mutations persist after navigation? (Mutate, navigate away, navigate back — fresh data shows)
 - Do mutations survive navigation? (Toggle, then switch tabs — no stale data)
 - Does background refresh coordinate with user actions? (Action mid-poll — no clobber)
+- Does every server action call `refresh()` or `updateTag()`? (Without this, optimistic updates settle but server data is stale)
 - Do errors surface correctly? (Unexpected → error boundary, expected → toast)
 
 ---

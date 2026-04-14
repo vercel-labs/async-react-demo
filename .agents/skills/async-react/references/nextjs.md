@@ -8,7 +8,23 @@ How the App Router integrates with React's async coordination primitives. Only N
 
 Server actions are the mutation layer. They run on the server and integrate with the transition system via form `action` or `startTransition` on the client.
 
-After mutating data, invalidate the cache so server components re-render with fresh data. Use `updateTag()` to mark cached entries as stale:
+**Every server action that mutates data must invalidate.** Without invalidation, `useOptimistic` shows the instant result but the server never re-renders — so the optimistic value settles to stale data, and navigating away and back shows old state.
+
+Two invalidation methods:
+
+- **`refresh()`** — Invalidates the entire client router cache. The simplest option: import from `next/cache` and call at the end of the server action. Use when you don't have granular cache tags.
+- **`updateTag(tag)`** — Marks specific cached entries as stale. More targeted: only server components using `cacheTag(tag)` re-render. Use when your queries have cache tags.
+
+```tsx
+'use server';
+
+import { refresh } from 'next/cache';
+
+export async function toggleStar(taskId: string) {
+  await db.star.toggle({ where: { taskId, userId } });
+  refresh();
+}
+```
 
 ```tsx
 'use server';
@@ -23,7 +39,9 @@ export async function deleteComment(id: string, eventSlug: string) {
 
 ### The Flow
 
-User submits → `useOptimistic` shows instant result → server action runs → `updateTag()` invalidates cache → server components re-render → optimistic value settles to real data.
+User submits → `useOptimistic` shows instant result → server action runs → `refresh()` or `updateTag()` invalidates → server components re-render → optimistic value settles to real data.
+
+**If you forget the invalidation call:** the optimistic update shows instantly, the mutation succeeds on the server, but the UI never updates with the real data. This is the most common bug when applying the skill.
 
 ### Return Errors, Don't Throw
 
