@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useOptimistic, useState } from "react";
+import { toast } from "sonner";
 import { updateStatus } from "@/lib/actions";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,8 @@ export function BoardClient({
   function handleDrop(targetStatus: Status, taskId: string) {
     startTransition(async () => {
       moveTask({ id: taskId, newStatus: targetStatus });
-      await updateStatus(taskId, targetStatus);
+      const result = await updateStatus(taskId, targetStatus);
+      if ("error" in result) toast.error(result.error);
     });
     setDragOverColumn(null);
   }

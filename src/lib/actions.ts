@@ -33,16 +33,16 @@ export async function cyclePriority(
 export async function updateStatus(
   taskId: string,
   newStatus: Status
-): Promise<Status | null> {
+): Promise<{ error: string } | { status: Status }> {
   await delay(500);
   if (Math.random() < 0.3) {
-    throw new Error("Failed to update status — server error");
+    return { error: "Failed to update status — server error" };
   }
   const task = tasks.find((t) => t.id === taskId);
-  if (!task) return null;
+  if (!task) return { error: "Task not found" };
   task.status = newStatus;
   refresh();
-  return task.status;
+  return { status: task.status };
 }
 
 export async function reassignTask(
