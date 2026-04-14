@@ -49,9 +49,7 @@ export function CreateTaskModal() {
 
   function toggleLabel(label: string) {
     setSelectedLabels((prev) =>
-      prev.includes(label)
-        ? prev.filter((l) => l !== label)
-        : [...prev, label]
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
     );
   }
 
@@ -98,7 +96,7 @@ export function CreateTaskModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[13px] text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70">
+      <DialogTrigger className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[13px] text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70">
         <Plus className="size-3.5" />
         New Task
       </DialogTrigger>
@@ -157,7 +155,7 @@ export function CreateTaskModal() {
                       "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                       status === s.value
                         ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
                     )}
                   >
                     {s.label}
@@ -179,7 +177,7 @@ export function CreateTaskModal() {
                       "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                       priority === p.value
                         ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
                     )}
                   >
                     {p.label}
@@ -201,7 +199,7 @@ export function CreateTaskModal() {
                       "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                       assignee === name
                         ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
                     )}
                   >
                     <span
@@ -209,7 +207,7 @@ export function CreateTaskModal() {
                         "flex size-4 items-center justify-center rounded-full text-[9px]",
                         assignee === name
                           ? "bg-white/[0.12] text-white/70"
-                          : "bg-white/[0.06] text-white/30"
+                          : "bg-white/[0.06] text-white/30",
                       )}
                     >
                       {name[0]}
@@ -233,7 +231,7 @@ export function CreateTaskModal() {
                       "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize transition-colors",
                       selectedLabels.includes(label)
                         ? "bg-white/[0.1] text-white/70"
-                        : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]"
+                        : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]",
                     )}
                   >
                     {label}
