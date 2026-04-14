@@ -229,7 +229,7 @@ Show pending states without making parent components client components. Set `dat
 </div>
 ```
 
-CSS `:has()` only matches descendants, so `has-data-pending:` won't work across siblings. When the pending element and the element that should react are siblings, wrap them in a common ancestor with Tailwind's `group` and use `group-has-data-pending:` on the sibling:
+For sibling elements, use `group` on a common ancestor:
 
 ```tsx
 <div className="group">
