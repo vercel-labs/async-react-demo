@@ -18,19 +18,19 @@ The `[main](#)` branch has all async coordination patterns applied; the `[plain]
 ## Anti-Patterns (plain branch)
 
 
-| Where              | What's broken                                                                            | Async React fix                                                                |
-| ------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Board              | No `<Suspense>`, page blocks until all columns load                                      | `<Suspense>` boundaries with skeleton fallbacks                                |
+| Where              | What's broken                                                                            | Async React fix                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Board              | No `<Suspense>`, page blocks until all columns load                                      | `<Suspense>` boundaries with skeleton fallbacks                                   |
 | Drag-and-drop      | `useState` optimistic that never reverts on failure, raw `await` bypasses error boundary | `useOptimistic` (auto-reverts) + `startTransition` (errors bubble to `error.tsx`) |
-| Create task modal  | `useEffect` + `fetch` to load form options, `onClick` submit via API route               | Server data as props, form `action` + server action, `useOptimistic` list add  |
-| Task card controls | `onClick` → `await` → `setState` for inline priority/assignee, UI freezes                | Form `action` + `useOptimistic`                                                |
-| Status select      | `onClick` → `await` → `setState`, UI freezes during update                               | Form `action` + `useOptimistic`                                                |
-| Assignee select    | `onClick` → `await` → `setState`, no instant feedback                                    | Form `action` + `useOptimistic`                                                |
-| Label filter       | `onChange` → `router.push`, no pending feedback                                          | `action` prop + `data-pending` CSS pattern                                     |
-| Priority button    | `onClick` → `await` → `setState`, no instant feedback                                    | Form `action` + `useOptimistic` with reducer                                   |
-| Comment form       | `onClick` → `await` → manual refetch                                                     | Form `action` + `useOptimistic` list add                                       |
-| Comment list       | `useEffect` + `fetch` + manual state management                                          | Server component with `<Suspense>`                                             |
-| Delete button      | `onClick` → `await` → callback, no feedback                                              | `useTransition` + `data-pending`                                               |
+| Create task modal  | `useEffect` + `fetch` to load form options, `onClick` submit via API route               | Server data as props, form `action` + server action, `useOptimistic` list add     |
+| Task card controls | `onClick` → `await` → `setState` for inline priority/assignee, UI freezes                | Form `action` + `useOptimistic`                                                   |
+| Status select      | `onClick` → `await` → `setState`, UI freezes during update                               | Form `action` + `useOptimistic`                                                   |
+| Assignee select    | `onClick` → `await` → `setState`, no instant feedback                                    | Form `action` + `useOptimistic`                                                   |
+| Label filter       | `onChange` → `router.push`, no pending feedback                                          | `action` prop + `data-pending` CSS pattern                                        |
+| Priority button    | `onClick` → `await` → `setState`, no instant feedback                                    | Form `action` + `useOptimistic` with reducer                                      |
+| Comment form       | `onClick` → `await` → manual refetch                                                     | Form `action` + `useOptimistic` list add                                          |
+| Comment list       | `useEffect` + `fetch` + manual state management                                          | Server component with `<Suspense>`                                                |
+| Delete button      | `onClick` → `await` → callback, no feedback                                              | `useTransition` + `data-pending`                                                  |
 
 
 ## Try It

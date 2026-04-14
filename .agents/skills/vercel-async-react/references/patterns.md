@@ -407,12 +407,13 @@ CSS `:has([data-pending])` bubbles the pending state up without the parent needi
 
 ### Grouped Pending (data-pending + group)
 
-For design components that affect a larger region:
+CSS `:has()` only matches descendants, so `has-data-pending:` won't work across siblings. When the pending element and the element that should react are siblings, wrap them in a common ancestor with Tailwind's `group` and use `group-has-data-pending:` on the sibling:
 
 ```tsx
-<div className="group" data-pending={isPending ? '' : undefined}>
-  <div className="group-has-data-pending:opacity-50">
-    <Grid />
+<div className="group">
+  <FilterBar />   {/* sets data-pending internally */}
+  <div className="group-has-data-pending:opacity-50 transition-opacity">
+    <ContentGrid />
   </div>
 </div>
 ```
