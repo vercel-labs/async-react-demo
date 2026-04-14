@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import {
   comments,
   getNextCommentId,
@@ -13,20 +12,7 @@ import {
 } from "./data";
 import { delay } from "./utils";
 
-async function getCurrentUser(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("taskboard-user")?.value ?? null;
-}
-
-export async function setUserName(formData: FormData) {
-  const name = (formData.get("name") as string)?.trim();
-  if (!name) return;
-  const cookieStore = await cookies();
-  cookieStore.set("taskboard-user", name, {
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
-  });
-}
+const DEFAULT_USER = "You";
 
 const priorityCycle: Record<Priority, Priority> = {
   low: "medium",
@@ -75,8 +61,8 @@ export async function addComment(
   content: string
 ): Promise<Comment | null> {
   await delay(800);
-  const userName = await getCurrentUser();
-  if (!userName || !content.trim()) return null;
+  const userName = DEFAULT_USER;
+  if (!content.trim()) return null;
 
   const comment: Comment = {
     id: getNextCommentId(),
@@ -91,8 +77,7 @@ export async function addComment(
 
 export async function deleteComment(commentId: string) {
   await delay(500);
-  const userName = await getCurrentUser();
-  if (!userName) return;
+  const userName = DEFAULT_USER;
 
   const idx = comments.findIndex(
     (c) => c.id === commentId && c.userName === userName

@@ -15,6 +15,8 @@ Two invalidation methods:
 - **`refresh()`** — Invalidates the entire client router cache. The simplest option: import from `next/cache` and call at the end of the server action. Use when you don't have granular cache tags.
 - **`updateTag(tag)`** — Marks specific cached entries as stale. More targeted: only server components using `cacheTag(tag)` re-render. Use when your queries have cache tags.
 
+**Verify the import exists** — `refresh()` is a Next.js 16 API. Before using it, confirm it's available: `grep 'refresh' node_modules/next/cache.js`. If not found, fall back to `revalidatePath('/')` from `next/cache`.
+
 ```tsx
 'use server';
 

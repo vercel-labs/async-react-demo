@@ -1,6 +1,6 @@
 ---
-name: async-react
-description: Guide for implementing async coordination patterns using React's primitives — transitions, useOptimistic, Suspense, useDeferredValue, action props, and form actions. Use this skill when the user wants to add optimistic updates, pending states, loading boundaries, action props on design components, form actions, stale-while-revalidate search, or coordinate mutations with navigation. Also use when the user mentions useOptimistic, useTransition, startTransition, useDeferredValue, useSuspenseQuery, action prop, data-pending, optimistic UI, or asks about handling async in-between states in React.
+name: vercel-async-react
+description: Guide for fixing common React UX issues — frozen UI during submissions, missing loading states, stale data after navigation, optimistic updates that don't revert on failure, flickering between states, and uncoordinated mutations. Applies React's async primitives (useOptimistic, useTransition, Suspense, useDeferredValue, form actions, action props) to replace useState/useEffect fetch patterns, onClick-based mutations, and manual loading state management. Use this skill when the user reports UI freezing on click, no feedback during async work, data out of sync after navigating, layout shift on load, search/filter feeling sluggish, or wants to add optimistic updates, pending indicators, loading skeletons, or instant-feeling interactions. Also use when the user mentions useOptimistic, useTransition, startTransition, Suspense, useDeferredValue, action props, data-pending, form actions, or asks about handling async in-between states in React.
 license: MIT
 metadata:
   author: vercel
@@ -11,7 +11,13 @@ metadata:
 
 Coordinate async UI states using React's built-in primitives. The core idea: wrap async work in **transitions**, and React tracks pending state, batches updates, and coordinates everything — loading, mutations, navigation — through a single pipeline. No competing state layers, no race conditions.
 
-This is the combination of React 18's concurrent features and React 19's coordination APIs. The React team calls this "Async React" — a complete system for building responsive async applications through composable primitives. It spans three layers: **async data** (Suspense, server components), **async router** (transitions on navigation), and **async design** (action props on UI components).
+This is the combination of React 18's concurrent features and React 19's coordination APIs. The React team calls this "Async React" — a complete system for building responsive async applications through composable primitives. Based on [Ricky Hanlon's React Conf 2025 demo](https://github.com/rickhanlonii/async-react), the vision is that product code becomes simple and declarative because three infrastructure layers handle async coordination internally:
+
+- **Routing** — The router uses transitions by default, so navigation never freezes the UI.
+- **Data fetching** — The data layer uses Suspense by default, so loading states are declarative.
+- **Design components** — UI components expose `action` props with built-in `useOptimistic` and delayed loading indicators, so product code just passes callbacks.
+
+On fast networks (<150ms), the app feels synchronous — no visible loading states. On slow networks, loading states appear automatically.
 
 ## When to Add Coordination
 
@@ -35,6 +41,7 @@ This is an implementation order, not a "pick one" list. Implement every pattern 
 | Toggle (favorite, like) | Form `action` + `useOptimistic` | Instant visual toggle, auto-rollback on failure |
 | One-way action (upvote) | Form `action` + `useOptimistic` with reducer | Increment-only, disable after |
 | Adding to a list | `useOptimistic` + `crypto.randomUUID()` | Shared ID prevents duplicate flash |
+| Move between groups (Kanban, categories) | `useOptimistic` with reducer + `useTransition` | Instant move, auto-revert on failure |
 | Destructive action (delete) | `useOptimistic` or `useTransition` + `data-pending` | Optimistic delete with rollback, or pending feedback |
 | Tab / filter switch | `action` prop on design component | Instant highlight, old content stays |
 | Search / filter with async results | `useDeferredValue` + `useSuspenseQuery` | Stale results stay visible while fresh data loads |
@@ -121,6 +128,15 @@ const [isPending, setIsPending] = useOptimistic(false);
   {isPending ? 'Submitting...' : 'Submit'}
 </button>
 ```
+
+**Derived pending from value comparison:** For design components that optimistically update a value, you can derive `isPending` by comparing the optimistic value to the server value instead of using `useTransition`:
+
+```tsx
+const [optimisticValue, setOptimisticValue] = useOptimistic(serverValue);
+const isPending = optimisticValue !== serverValue;
+```
+
+Both approaches are valid — `useTransition` gives you a `startTransition` function, while value comparison is more compact when the component already has `useOptimistic`.
 
 ### Suspense Boundaries
 
@@ -242,8 +258,24 @@ No competing data layers. Everything goes through React.
 - **`onClick` instead of form `action`** — Form actions get transition wrapping for free. Use `<form action={...}>` for mutations.
 - **Calling `useOptimistic` setter outside an Action** — The setter must be called inside `startTransition` or a form `action`. Outside, React warns and the optimistic value briefly renders then reverts.
 - **Competing data layers** — Don't mix `useOptimistic` with separate `useState` for the same data. One source of truth (server props), one overlay (`useOptimistic`).
-- **Wrong boundary structure** — One big `<Suspense>` at the root means nothing renders until everything loads. But blindly splitting into siblings can cause layout shift (CLS) if a component above has unknown height. Choose boundaries based on the loading state you want for the page.
+- **Wrong boundary structure** — One big `<Suspense>` at the root means nothing renders until everything loads. But blindly splitting into siblings can cause layout shift (CLS) if a component above has unknown height. Choose boundaries based on the loading state you want for the page. Don't try to fix existing skeleton dimensions or CLS in fallbacks — that's a design concern, not an async coordination concern.
 - **Using updater instead of reducer when base state can change** — If the base data might change while your Action is pending (e.g., from polling), use a reducer. Updaters only see state from when the Transition started; reducers re-run with the latest base value.
+- **Silent optimistic rollback** — `useOptimistic` auto-reverts on failure, but the user sees the UI snap back with no explanation. Pair rollback with user-visible feedback: use `toast.error()` inside a `try/catch` in the transition, or add an `error.tsx` boundary for unexpected failures. The rollback handles the UI; the feedback handles the user.
+- **State updates after `await` fall outside the transition** — Inside an async `startTransition`, state updates after an `await` are not part of the transition. This means cleanup like closing a dialog or resetting a form runs immediately instead of being batched with the re-render. Use a double-transition: wrap post-`await` state updates in another `startTransition`:
+
+```tsx
+startTransition(async () => {
+  addOptimistic(newItem);
+  await createItem(newItem);
+  // These run outside the transition scope after await:
+  startTransition(() => {
+    resetForm();
+    setIsOpen(false);
+  });
+});
+```
+
+Without the inner `startTransition`, the dialog closes before the board re-renders with fresh data, causing a flash.
 
 ---
 

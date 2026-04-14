@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getTask, getCurrentUser } from "@/lib/queries";
+import { getTask } from "@/lib/queries";
 import { StatusSelect } from "@/components/status-select";
 import { AssigneeSelect } from "@/components/assignee-select";
 import { PriorityButton } from "@/components/priority-button";
@@ -16,7 +16,7 @@ export default async function TaskPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [task, user] = await Promise.all([getTask(id), getCurrentUser()]);
+  const task = await getTask(id);
 
   if (!task) notFound();
 
@@ -79,7 +79,7 @@ export default async function TaskPage({
         </div>
       </div>
 
-      <CommentList taskId={task.id} userName={user ?? ""} />
+      <CommentList taskId={task.id} userName="You" />
     </div>
   );
 }

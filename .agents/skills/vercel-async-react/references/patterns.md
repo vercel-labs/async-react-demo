@@ -79,7 +79,7 @@ Support both `changeAction` and `onChange`. The "Action" suffix signals the call
 ```tsx
 'use client';
 
-import { useOptimistic, useTransition } from 'react';
+import { startTransition, useOptimistic } from 'react';
 
 type TabListProps = {
   tabs: { label: string; value: string }[];
@@ -90,7 +90,7 @@ type TabListProps = {
 
 export function TabList({ tabs, activeTab, changeAction, onChange }: TabListProps) {
   const [optimisticTab, setOptimisticTab] = useOptimistic(activeTab);
-  const [isPending, startTransition] = useTransition();
+  const isPending = optimisticTab !== activeTab;
 
   function handleTabChange(e: React.MouseEvent<HTMLButtonElement>, value: string) {
     onChange?.(e);
@@ -117,7 +117,7 @@ export function TabList({ tabs, activeTab, changeAction, onChange }: TabListProp
 }
 ```
 
-`onChange` fires synchronously before the transition starts — useful for validation or `event.preventDefault()`. The action prop handles the async coordination.
+`isPending` is derived by comparing the optimistic value to the server value — no `useTransition` needed. `onChange` fires synchronously before the transition starts — useful for validation or `event.preventDefault()`. The action prop handles the async coordination.
 
 ### Consumer Usage
 
@@ -325,6 +325,27 @@ function handleDelete(id) {
 
 Style deleted items with reduced opacity. If the action fails, `useOptimistic` reverts and the item reappears.
 
+### Move Between Groups (Kanban, Categories)
+
+When items move between groups (columns, categories, status buckets), use a reducer that remaps the item's group field. The optimistic update moves the item instantly; on failure, `useOptimistic` snaps it back:
+
+```tsx
+const [optimisticItems, moveItem] = useOptimistic(
+  items,
+  (state, { id, newStatus }: { id: string; newStatus: Status }) =>
+    state.map(item => item.id === id ? { ...item, status: newStatus } : item)
+);
+
+function handleMove(id: string, newStatus: Status) {
+  startTransition(async () => {
+    moveItem({ id, newStatus });
+    await updateStatus(id, newStatus);
+  });
+}
+```
+
+This works for drag-and-drop boards, category reassignment, priority changes — any interaction that moves an item between groups. The reducer re-runs with the latest base data if a background refresh arrives mid-action, so the move sits on top of fresh data.
+
 ### List Add (UUID Dedup)
 
 ```tsx
@@ -462,6 +483,39 @@ How it works:
 - `useSuspenseQuery` provides built-in caching — repeated queries show instant cache hits.
 
 This pattern works with any Suspense-enabled data source, not just TanStack Query.
+
+---
+
+## Double-Transition Pattern
+
+State updates after `await` inside an async `startTransition` fall outside the transition scope. This matters when you need to close a dialog, reset a form, or update UI after a mutation completes — those updates run immediately instead of being batched with the re-render from `refresh()`.
+
+```tsx
+function CreateDialog({ action }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isPending, setIsPending] = useOptimistic(false);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <form action={async (formData) => {
+        setIsPending(true);
+        await action(formData);
+        // Without inner startTransition, dialog closes before
+        // the board re-renders with fresh data — causes a flash
+        startTransition(() => {
+          setIsOpen(false);
+        });
+      }}>
+        <button type="submit" disabled={isPending}>
+          {isPending ? 'Creating...' : 'Create'}
+        </button>
+      </form>
+    </Dialog>
+  );
+}
+```
+
+The outer transition (from `<form action>`) wraps the `await`. The inner `startTransition` batches the dialog close with the re-render triggered by `refresh()` inside the server action. Without it, the dialog closes instantly while the page still shows stale data.
 
 ---
 

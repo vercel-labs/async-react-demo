@@ -1,10 +1,10 @@
-import { cookies } from "next/headers";
 import { comments, tasks, type Label, type Status } from "./data";
 import { delay } from "./utils";
 
-export async function getCurrentUser(): Promise<string | null> {
-  const cookieStore = await cookies();
-  return cookieStore.get("taskboard-user")?.value ?? null;
+const DEFAULT_USER = "You";
+
+export async function getCurrentUser(): Promise<string> {
+  return DEFAULT_USER;
 }
 
 export async function getTasks(label?: Label) {

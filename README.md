@@ -1,6 +1,6 @@
 # Async React Demo
 
-A Next.js task board app demonstrating async coordination patterns — optimistic updates, Suspense boundaries, form actions, action props, and pending states. Also serves as a testing ground for the [async-react agent skill](.agents/skills/async-react).
+A Next.js task board app demonstrating async coordination patterns — optimistic updates, Suspense boundaries, form actions, action props, and pending states. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/async-react).
 
 The [`main`](#) branch has all async coordination patterns applied; the [`start`](#) branch is the base app with legacy patterns and no feedback.
 
@@ -14,7 +14,6 @@ The [`main`](#) branch has all async coordination patterns applied; the [`start`
 - **Priority cycling** — Cycle task priority (low → medium → high → low)
 - **Comments** — Add and delete comments on any task
 - **Label filtering** — Filter board by label via URL search params
-- **Auth gate** — Cookie-based user identity
 
 ## Anti-Patterns (start branch)
 
@@ -37,11 +36,11 @@ The [`main`](#) branch has all async coordination patterns applied; the [`start`
 Install the skill and prompt your agent against the `start` branch:
 
 ```bash
-npx skills add https://github.com/aurorascharff/async-react-demo --skill async-react
+npx skills add https://github.com/vercel-labs/async-react
 ```
 
 ```
-Add async coordination to this app using the async-react skill
+Add async coordination to this app using the vercel-async-react skill
 ```
 
 Output is not deterministic — the agent may not cover every interaction in one pass. Review what it did, then ask for what's missing:
@@ -66,3 +65,7 @@ pnpm run dev
 - shadcn/ui
 - Geist Sans + Mono fonts
 - In-memory data store with simulated delays
+
+## Credits
+
+Based on [Ricky Hanlon's Async React demo](https://github.com/rickhanlonii/async-react) from the [React Conf 2025 talk](https://www.youtube.com/watch?v=TQQPAU21ZUw). See the [Async React Working Group](https://github.com/reactwg/async-react/discussions) for the latest on making Async React the default for React apps.

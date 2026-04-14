@@ -13,6 +13,17 @@ The audit identifies both. Steps 2–3 are "add coordination." Step 4 is "fix le
 
 Before writing any code, scan the codebase and classify every async interaction.
 
+**Quick scan — run these searches to find candidates:**
+
+```
+grep -r "useState.*useEffect" --include="*.tsx"   # Legacy fetch patterns
+grep -r "onClick.*await" --include="*.tsx"         # Async onClick handlers → form actions
+grep -r "router\.refresh" --include="*.tsx"        # Client-side invalidation → move server-side
+grep -r "/api/" --include="*.tsx"                  # API routes that might be unnecessary
+grep -r "onChange" --include="*.tsx"                # Design components missing action props
+grep -r "window\.location" --include="*.tsx"       # Hard refreshes → router.refresh or refresh()
+```
+
 **Look for legacy patterns to fix:**
 
 - **Every `useState` + `useEffect` pair** — Client-side data fetching that should be server data passed as props. This is the #1 source of coordination bugs: mutations and navigation don't talk to each other because state lives in two places.
@@ -97,10 +108,11 @@ For every `useState` + `useEffect` pair that fetches server-derived data:
 
 1. Delete the API endpoint (if created just for this)
 2. Delete the `useEffect` fetch and local `useState`
-3. Pass the data from a server component as a prop
+3. Pass the data from a server component as a prop — **but first check if the data is actually server-only.** Constants (enums, option lists, static arrays) can often be imported directly in client components. Don't add server component props for data that's just a constant in a shared file.
 4. Add `useOptimistic` for instant feedback on mutations
 5. Use form `action` instead of `onClick`
 6. **Ensure the server action invalidates** — call `refresh()` or `updateTag()` after mutating data (see `nextjs.md`). Without this, `useOptimistic` settles but the *next* render still shows stale data.
+7. **Remove `key` props used to force remounts on data changes** — When migrating from `useState(initialValue)` to `useOptimistic(serverValue)`, remove any `key` prop used to reset state when props change. `useOptimistic` tracks the base value automatically; `key`-based remounting is only needed for `useState`.
 
 **Before (broken coordination):**
 ```tsx
@@ -182,6 +194,22 @@ async function submitAction(formData: FormData) {
 }
 ```
 
+### Move between groups
+```tsx
+const [optimisticItems, moveItem] = useOptimistic(
+  items,
+  (state, { id, newGroup }) =>
+    state.map(item => item.id === id ? { ...item, group: newGroup } : item)
+);
+
+function handleMove(id, newGroup) {
+  startTransition(async () => {
+    moveItem({ id, newGroup });
+    await updateGroup(id, newGroup);
+  });
+}
+```
+
 ### Optimistic delete
 ```tsx
 const [optimisticItems, removeItem] = useOptimistic(
@@ -196,10 +224,65 @@ const [optimisticItems, removeItem] = useOptimistic(
 **Rules:**
 - The setter must be called inside an Action (`startTransition` or form `action`). Inside an Action prop, call it directly.
 - Use reducers (not updaters) when the base state might change during the Action — reducers re-run with the latest base value.
-- `useOptimistic` rolls back automatically on failure. Add a toast for user feedback.
+- `useOptimistic` rolls back automatically on failure. Pair rollback with user-visible feedback — a toast or inline error message — so the user understands why the UI reverted. Silent rollback with no feedback is confusing.
 - For list adds, generate a UUID on the client and pass it to the server to prevent duplicate flash.
 - Dedup in the reducer when using background polling.
 - **Every server action that mutates data must invalidate** — call `refresh()` or `updateTag()` so server components re-render with fresh data. Optimistic updates are an overlay; without invalidation, the base data never updates.
+
+### Shared mutation logic
+When the client needs to predict the server result for an optimistic update (e.g., cycling through enum values: low → medium → high → low), extract the logic into a shared constant or pure function. Server actions can export non-async values alongside async functions:
+
+```tsx
+// actions.ts
+export const PRIORITY_CYCLE: Record<Priority, Priority> = {
+  low: 'medium', medium: 'high', high: 'low',
+};
+
+export async function cyclePriority(id: string) {
+  'use server';
+  // uses PRIORITY_CYCLE internally
+}
+```
+
+The client imports `PRIORITY_CYCLE` to compute the optimistic value without duplicating the logic.
+
+### Complex forms with controlled state
+For modals or forms with many fields (multi-select, radio groups, dependent selects), keep `useState` for the UI controls. Wrap the submission in a `<form action>` that reads from the controlled state directly — form actions accept closures, not just `FormData`:
+
+```tsx
+const [labels, setLabels] = useState<string[]>([]);
+const [priority, setPriority] = useState('medium');
+
+<form action={async () => {
+  addOptimistic({ labels, priority, ... });
+  await createItem({ labels, priority, ... });
+}}>
+  {/* controlled inputs for complex UI */}
+  <button type="submit">Create</button>
+</form>
+```
+
+This is not a `useState` anti-pattern — controlled state for complex UI is fine. The anti-pattern is using `useState` for **server-derived data** or **mutation results**.
+
+### Post-await state updates (double-transition)
+
+State updates after `await` inside an async `startTransition` fall outside the transition scope. If you close a dialog or reset a form after awaiting a server action, those updates run immediately — before `refresh()` re-renders the page with fresh data.
+
+Wrap post-`await` state updates in another `startTransition`:
+
+```tsx
+<form action={async () => {
+  addOptimistic(newItem);
+  await createItem(newItem);
+  // Inner transition batches dialog close with the re-render
+  startTransition(() => {
+    resetForm();
+    setIsOpen(false);
+  });
+}}>
+```
+
+Without the inner `startTransition`, the dialog closes while the page still shows stale data, causing a visual flash.
 
 ## Step 6: Add Pending Feedback
 
