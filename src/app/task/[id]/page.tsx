@@ -3,19 +3,40 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { getTask } from "@/lib/queries";
-import { StatusSelect } from "@/components/status-select";
-import { AssigneeSelect } from "@/components/assignee-select";
-import { PriorityButton } from "@/components/priority-button";
-import { CommentSection, CommentSectionSkeleton } from "@/components/comment-section";
+import { StatusSelect } from "./_components/status-select";
+import { AssigneeSelect } from "./_components/assignee-select";
+import { PriorityButton } from "./_components/priority-button";
+import {
+  CommentSection,
+  CommentSectionSkeleton,
+} from "./_components/comment-section";
 import { cn, timeAgo } from "@/lib/utils";
 
 const labelStyle = "bg-white/[0.06] text-white/50";
 
-async function TaskDetail({
+export default function TaskPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <Link
+        href="/"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/30 transition-colors hover:text-white/60"
+      >
+        <ArrowLeft className="size-3.5" />
+        Back
+      </Link>
+
+      <Suspense fallback={<TaskDetailSkeleton />}>
+        <TaskDetail params={params} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function TaskDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const task = await getTask(id);
 
@@ -31,7 +52,7 @@ async function TaskDetail({
                 key={l}
                 className={cn(
                   "rounded-full px-2 py-0.5 font-mono text-[10px]",
-                  labelStyle
+                  labelStyle,
                 )}
               >
                 {l}
@@ -41,9 +62,7 @@ async function TaskDetail({
               {timeAgo(task.createdAt)}
             </span>
           </div>
-          <h1 className="text-lg font-semibold tracking-tight">
-            {task.title}
-          </h1>
+          <h1 className="text-lg font-semibold tracking-tight">{task.title}</h1>
         </div>
 
         <p className="mb-6 text-sm leading-relaxed text-white/50">
@@ -99,27 +118,5 @@ function TaskDetailSkeleton() {
       </div>
       <CommentSectionSkeleton />
     </>
-  );
-}
-
-export default function TaskPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-      <Link
-        href="/"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/30 transition-colors hover:text-white/60"
-      >
-        <ArrowLeft className="size-3.5" />
-        Back
-      </Link>
-
-      <Suspense fallback={<TaskDetailSkeleton />}>
-        <TaskDetail params={params} />
-      </Suspense>
-    </div>
   );
 }
