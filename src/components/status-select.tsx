@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { startTransition, useOptimistic } from "react";
 import { updateStatus } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import type { Status } from "@/lib/data";
@@ -14,19 +13,19 @@ const statuses: { value: Status; label: string }[] = [
 
 export function StatusSelect({
   taskId,
-  initialStatus,
+  status,
 }: {
   taskId: string;
-  initialStatus: Status;
+  status: Status;
 }) {
-  const router = useRouter();
-  const [status, setStatus] = useState(initialStatus);
+  const [optimisticStatus, setOptimisticStatus] = useOptimistic(status);
 
-  async function handleClick(newStatus: Status) {
-    if (newStatus === status) return;
-    const result = await updateStatus(taskId, newStatus);
-    if (result) setStatus(result);
-    router.refresh();
+  function handleStatusAction(newStatus: Status) {
+    if (newStatus === optimisticStatus) return;
+    startTransition(async () => {
+      setOptimisticStatus(newStatus);
+      await updateStatus(taskId, newStatus);
+    });
   }
 
   return (
@@ -34,10 +33,10 @@ export function StatusSelect({
       {statuses.map((s) => (
         <button
           key={s.value}
-          onClick={() => handleClick(s.value)}
+          onClick={() => handleStatusAction(s.value)}
           className={cn(
             "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-            status === s.value
+            optimisticStatus === s.value
               ? "bg-white/[0.1] text-white/80"
               : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
           )}

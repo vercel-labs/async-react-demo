@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { startTransition, useOptimistic, useState } from "react";
 import { updateStatus } from "@/lib/actions";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
 import type { Assignee, Label, Priority, Status } from "@/lib/data";
 
-type SerializedTask = {
+export type SerializedTask = {
   id: string;
   title: string;
   description: string;
@@ -29,24 +28,27 @@ export function BoardClient({
 }: {
   initialTasks: SerializedTask[];
 }) {
-  const router = useRouter();
-  const [tasks, setTasks] = useState(initialTasks);
+  const [optimisticTasks, moveTask] = useOptimistic(
+    initialTasks,
+    (state, { id, newStatus }: { id: string; newStatus: Status }) =>
+      state.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
+  );
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
 
-  async function handleDrop(targetStatus: Status, taskId: string) {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: targetStatus } : t))
-    );
+  function handleDrop(targetStatus: Status, taskId: string) {
+    startTransition(async () => {
+      moveTask({ id: taskId, newStatus: targetStatus });
+      await updateStatus(taskId, targetStatus);
+    });
     setDragOverColumn(null);
-
-    await updateStatus(taskId, targetStatus);
-    router.refresh();
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {columns.map((col) => {
-        const columnTasks = tasks.filter((t) => t.status === col.status);
+        const columnTasks = optimisticTasks.filter(
+          (t) => t.status === col.status
+        );
 
         return (
           <div

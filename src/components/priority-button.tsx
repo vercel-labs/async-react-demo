@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOptimistic } from "react";
 import { ChevronUp } from "lucide-react";
-import { cyclePriority } from "@/lib/actions";
+import { cyclePriority, PRIORITY_CYCLE } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";
 
@@ -15,32 +14,32 @@ const priorityConfig: Record<Priority, { label: string; class: string }> = {
 
 export function PriorityButton({
   taskId,
-  initialPriority,
+  priority,
 }: {
   taskId: string;
-  initialPriority: Priority;
+  priority: Priority;
 }) {
-  const router = useRouter();
-  const [priority, setPriority] = useState(initialPriority);
+  const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
 
-  async function handleClick() {
-    const next = await cyclePriority(taskId);
-    if (next) setPriority(next);
-    router.refresh();
-  }
-
-  const config = priorityConfig[priority];
+  const config = priorityConfig[optimisticPriority];
 
   return (
-    <button
-      onClick={handleClick}
-      className={cn(
-        "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors hover:bg-white/5",
-        config.class
-      )}
+    <form
+      action={async () => {
+        setOptimisticPriority(PRIORITY_CYCLE[optimisticPriority]);
+        await cyclePriority(taskId);
+      }}
     >
-      <ChevronUp className="size-3" />
-      {config.label}
-    </button>
+      <button
+        type="submit"
+        className={cn(
+          "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors hover:bg-white/5",
+          config.class
+        )}
+      >
+        <ChevronUp className="size-3" />
+        {config.label}
+      </button>
+    </form>
   );
 }

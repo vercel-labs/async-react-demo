@@ -1,26 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { startTransition, useOptimistic } from "react";
 import { reassignTask } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee } from "@/lib/data";
 
 export function AssigneeSelect({
   taskId,
-  initialAssignee,
+  assignee,
 }: {
   taskId: string;
-  initialAssignee: Assignee;
+  assignee: Assignee;
 }) {
-  const router = useRouter();
-  const [assignee, setAssignee] = useState<Assignee>(initialAssignee);
+  const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
 
-  async function handleClick(newAssignee: Assignee) {
-    if (newAssignee === assignee) return;
-    const result = await reassignTask(taskId, newAssignee);
-    if (result) setAssignee(result);
-    router.refresh();
+  function handleAssignAction(newAssignee: Assignee) {
+    if (newAssignee === optimisticAssignee) return;
+    startTransition(async () => {
+      setOptimisticAssignee(newAssignee);
+      await reassignTask(taskId, newAssignee);
+    });
   }
 
   return (
@@ -28,10 +27,10 @@ export function AssigneeSelect({
       {ASSIGNEES.map((name) => (
         <button
           key={name}
-          onClick={() => handleClick(name)}
+          onClick={() => handleAssignAction(name)}
           className={cn(
             "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-            assignee === name
+            optimisticAssignee === name
               ? "bg-white/[0.1] text-white/80"
               : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
           )}
@@ -39,7 +38,7 @@ export function AssigneeSelect({
           <span
             className={cn(
               "flex size-4 items-center justify-center rounded-full text-[9px]",
-              assignee === name
+              optimisticAssignee === name
                 ? "bg-white/[0.12] text-white/70"
                 : "bg-white/[0.06] text-white/30"
             )}

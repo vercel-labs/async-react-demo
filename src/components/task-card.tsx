@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic } from "react";
 import { useRouter } from "next/navigation";
-import { cyclePriority, reassignTask } from "@/lib/actions";
+import { cyclePriority, reassignTask, PRIORITY_CYCLE } from "@/lib/actions";
 import { cn } from "@/lib/utils";
-import { ASSIGNEES, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
+import {
+  ASSIGNEES,
+  type Assignee,
+  type Label,
+  type Priority,
+  type Status,
+} from "@/lib/data";
 
 const priorityDot: Record<Priority, string> = {
   high: "bg-white/70",
@@ -15,9 +21,9 @@ const priorityDot: Record<Priority, string> = {
 export function TaskCard({
   id,
   title,
-  priority: initialPriority,
+  priority,
   labels,
-  assignee: initialAssignee,
+  assignee,
 }: {
   id: string;
   title: string;
@@ -27,24 +33,8 @@ export function TaskCard({
   status: Status;
 }) {
   const router = useRouter();
-  const [priority, setPriority] = useState(initialPriority);
-  const [assignee, setAssignee] = useState(initialAssignee);
-
-  async function handlePriorityClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    const next = await cyclePriority(id);
-    if (next) setPriority(next);
-    router.refresh();
-  }
-
-  async function handleAssigneeClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    const currentIdx = ASSIGNEES.indexOf(assignee);
-    const nextAssignee = ASSIGNEES[(currentIdx + 1) % ASSIGNEES.length];
-    const result = await reassignTask(id, nextAssignee);
-    if (result) setAssignee(result);
-    router.refresh();
-  }
+  const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
+  const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
 
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.setData("text/plain", id);
@@ -63,14 +53,22 @@ export function TaskCard({
       className="group/card cursor-grab rounded-lg border border-white/[0.04] bg-white/[0.02] p-3 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] active:cursor-grabbing"
     >
       <div className="mb-2 flex items-center gap-2">
-        <button
-          onClick={handlePriorityClick}
-          className={cn(
-            "size-2 shrink-0 cursor-pointer rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/10",
-            priorityDot[priority]
-          )}
-          title={`${priority} priority — click to cycle`}
-        />
+        <form
+          action={async () => {
+            setOptimisticPriority(PRIORITY_CYCLE[optimisticPriority]);
+            await cyclePriority(id);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="submit"
+            className={cn(
+              "size-2 shrink-0 cursor-pointer rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/10",
+              priorityDot[optimisticPriority]
+            )}
+            title={`${optimisticPriority} priority — click to cycle`}
+          />
+        </form>
         <h3 className="flex-1 text-[13px] font-medium leading-snug text-white/80 group-hover/card:text-white">
           {title}
         </h3>
@@ -93,13 +91,24 @@ export function TaskCard({
           )}
         </div>
 
-        <button
-          onClick={handleAssigneeClick}
-          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] font-mono text-[10px] text-white/40 transition-colors hover:bg-white/[0.12] hover:text-white/60"
-          title={`${assignee} — click to reassign`}
+        <form
+          action={async () => {
+            const currentIdx = ASSIGNEES.indexOf(optimisticAssignee);
+            const nextAssignee =
+              ASSIGNEES[(currentIdx + 1) % ASSIGNEES.length];
+            setOptimisticAssignee(nextAssignee);
+            await reassignTask(id, nextAssignee);
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {assignee[0]}
-        </button>
+          <button
+            type="submit"
+            className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] font-mono text-[10px] text-white/40 transition-colors hover:bg-white/[0.12] hover:text-white/60"
+            title={`${optimisticAssignee} — click to reassign`}
+          >
+            {optimisticAssignee[0]}
+          </button>
+        </form>
       </div>
     </div>
   );

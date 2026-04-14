@@ -1,20 +1,24 @@
 "use server";
 
+import { refresh } from "next/cache";
 import {
   comments,
   getNextCommentId,
+  getNextTaskId,
   tasks,
   ASSIGNEES,
   type Assignee,
   type Comment,
+  type Label,
   type Priority,
   type Status,
+  type Task,
 } from "./data";
 import { delay } from "./utils";
 
 const DEFAULT_USER = "You";
 
-const priorityCycle: Record<Priority, Priority> = {
+export const PRIORITY_CYCLE: Record<Priority, Priority> = {
   low: "medium",
   medium: "high",
   high: "low",
@@ -26,7 +30,8 @@ export async function cyclePriority(
   await delay(500);
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
-  task.priority = priorityCycle[task.priority];
+  task.priority = PRIORITY_CYCLE[task.priority];
+  refresh();
   return task.priority;
 }
 
@@ -41,6 +46,7 @@ export async function updateStatus(
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
   task.status = newStatus;
+  refresh();
   return task.status;
 }
 
@@ -53,7 +59,39 @@ export async function reassignTask(
   if (!task) return null;
   if (!ASSIGNEES.includes(newAssignee as Assignee)) return null;
   task.assignee = newAssignee as Assignee;
+  refresh();
   return task.assignee;
+}
+
+export async function createTask(newTask: {
+  title: string;
+  description: string;
+  status: Status;
+  priority: Priority;
+  assignee: string;
+  labels: Label[];
+}): Promise<Task> {
+  await delay(800);
+  if (!newTask.title?.trim()) {
+    throw new Error("Title is required");
+  }
+
+  const task: Task = {
+    id: getNextTaskId(),
+    title: newTask.title.trim(),
+    description: newTask.description?.trim() ?? "",
+    status: newTask.status ?? "todo",
+    priority: newTask.priority ?? "medium",
+    labels: newTask.labels ?? [],
+    assignee: (ASSIGNEES.includes(newTask.assignee as Assignee)
+      ? newTask.assignee
+      : "Sarah") as Assignee,
+    createdAt: new Date(),
+  };
+
+  tasks.push(task);
+  refresh();
+  return task;
 }
 
 export async function addComment(
@@ -72,6 +110,7 @@ export async function addComment(
     createdAt: new Date(),
   };
   comments.push(comment);
+  refresh();
   return comment;
 }
 
@@ -85,4 +124,5 @@ export async function deleteComment(commentId: string) {
   if (idx >= 0) {
     comments.splice(idx, 1);
   }
+  refresh();
 }
