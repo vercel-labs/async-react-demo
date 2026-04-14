@@ -2,7 +2,7 @@
 
 A Next.js task board app demonstrating async coordination patterns — optimistic updates, Suspense boundaries, form actions, action props, and pending states. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/async-react).
 
-The `[main](#)` branch has all async coordination patterns applied; the `[plain](#)` branch is the base app with legacy patterns and no feedback.
+The [`main`](#) branch has all async coordination patterns applied; the [`plain`](#) branch is the base app with legacy patterns and no feedback.
 
 ## App Features
 
@@ -21,7 +21,7 @@ The `[main](#)` branch has all async coordination patterns applied; the `[plain]
 | Where              | What's broken                                                                            | Async React fix                                                                |
 | ------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Board              | No `<Suspense>`, page blocks until all columns load                                      | `<Suspense>` boundaries with skeleton fallbacks                                |
-| Drag-and-drop      | `useState` optimistic that never reverts on failure, raw `await` crashes on server error | `useOptimistic` (auto-reverts) + `useTransition` (errors go to error boundary) |
+| Drag-and-drop      | `useState` optimistic that never reverts on failure, raw `await` bypasses error boundary | `useOptimistic` (auto-reverts) + `startTransition` (errors bubble to `error.tsx`) |
 | Create task modal  | `useEffect` + `fetch` to load form options, `onClick` submit via API route               | Server data as props, form `action` + server action, `useOptimistic` list add  |
 | Task card controls | `onClick` → `await` → `setState` for inline priority/assignee, UI freezes                | Form `action` + `useOptimistic`                                                |
 | Status select      | `onClick` → `await` → `setState`, UI freezes during update                               | Form `action` + `useOptimistic`                                                |
