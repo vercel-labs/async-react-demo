@@ -3,7 +3,7 @@ import Link from "next/link";
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-black/80 backdrop-blur-xl supports-[backdrop-filter]:bg-black/60">
-      <div className="mx-auto flex h-14 max-w-5xl items-center px-4 sm:px-6">
+      <div className="mx-auto flex h-14 max-w-6xl items-center px-4 sm:px-6">
         <Link
           href="/"
           className="flex items-center gap-2.5 font-sans text-[15px] font-semibold tracking-tight text-white"
