@@ -14,7 +14,7 @@ April 2026
 
 ## Abstract
 
-Guide for implementing async coordination patterns using React's primitives — transitions, useOptimistic, Suspense, useDeferredValue, form actions, and the action props pattern. Covers the three async layers (design, router, data), optimistic updates, pending states, loading boundaries, stale-while-revalidate search, and coordination between mutations, navigation, and data loading. Works with any Suspense-enabled data source (server components, useSuspenseQuery, use()). Includes Next.js App Router integration with server actions, updateTag(), router behavior, and background polling.
+Guide for implementing async coordination patterns using React's primitives — transitions, useOptimistic, useActionState, Suspense, useDeferredValue, form actions, and the action props pattern. Covers the three async layers (design, router, data), optimistic updates, pending states, loading boundaries, stale-while-revalidate search, and coordination between mutations, navigation, and data loading. Works with any Suspense-enabled data source (server components, useSuspenseQuery, use()). Includes Next.js App Router integration with server actions, updateTag(), router behavior, and background polling.
 
 ---
 
@@ -40,6 +40,7 @@ Guide for implementing async coordination patterns using React's primitives — 
    - [Optimistic Mutations](#optimistic-mutations)
    - [Pessimistic Mutations (data-pending)](#pessimistic-mutations-data-pending)
    - [Deferred Values (Stale-While-Revalidate)](#deferred-values-stale-while-revalidate)
+   - [Action State (useActionState)](#action-state-useactionstate)
    - [Double-Transition Pattern](#double-transition-pattern)
    - [Coordination](#coordination)
 4. [Next.js Integration](#async-react-in-nextjs)
@@ -68,9 +69,10 @@ Every async interaction creates an in-between state. Each has a primitive:
 |----------|---------|---------------------|-----------|
 | 1 | **Loading boundaries** | "Data is coming" | `<Suspense>` + skeleton fallback |
 | 2 | **Optimistic mutation** | "Done (pending confirmation)" | `useOptimistic` + form `action` |
-| 3 | **Transition feedback** | "Working on it" | `useTransition` or `useOptimistic(false)` |
-| 4 | **Action props** | "Control responded instantly" | Design component with `action` prop |
-| 5 | **Stale-while-revalidate** | "Searching (old results visible)" | `useDeferredValue` + Suspense-enabled source |
+| 3 | **Action state** | "Submitted (here's the result)" | `useActionState` |
+| 4 | **Transition feedback** | "Working on it" | `useTransition` or `useOptimistic(false)` |
+| 5 | **Action props** | "Control responded instantly" | Design component with `action` prop |
+| 6 | **Stale-while-revalidate** | "Searching (old results visible)" | `useDeferredValue` + Suspense-enabled source |
 
 This is an implementation order, not a "pick one" list. Implement every pattern that fits the app. Only skip a pattern if the app has no use case for it.
 
@@ -84,6 +86,7 @@ This is an implementation order, not a "pick one" list. Implement every pattern 
 | Adding to a list | `useOptimistic` + `crypto.randomUUID()` | Shared ID prevents duplicate flash |
 | Move between groups (Kanban, categories) | `useOptimistic` with reducer + `useTransition` | Instant move, auto-revert on failure |
 | Destructive action (delete) | `useOptimistic` or `useTransition` + `data-pending` | Optimistic delete with rollback, or pending feedback |
+| Form submission (create, edit) | `useActionState` | Server response state, `isPending`, key-based reset |
 | Tab / filter switch | `action` prop on design component | Instant highlight, old content stays |
 | Search / filter with async results | `useDeferredValue` + `useSuspenseQuery` | Stale results stay visible while fresh data loads |
 
@@ -219,6 +222,45 @@ A form's `action` prop wraps the callback in a transition automatically — same
 }}>
   <button type="submit">Submit</button>
 </form>
+```
+
+### Action State
+
+`useActionState` manages state derived from the result of an action — like `useReducer` but the reducer can be async and perform side effects. It gives you `isPending` for free and queues actions sequentially (each receives the previous result):
+
+```tsx
+const [state, formAction, isPending] = useActionState(
+  async (prev, formData: FormData) => {
+    const result = await submitForm(formData);
+    if (result.error) return { ...prev, error: result.error };
+    return { error: null, key: prev.key + 1 };
+  },
+  { error: null, key: 0 }
+);
+
+<form action={formAction}>
+  <input name="title" required />
+  {state.error && <p>{state.error}</p>}
+  <button disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
+</form>
+```
+
+**When to use `useActionState` vs other primitives:**
+
+| Need | Use |
+|------|-----|
+| Server response state (validation errors, success/failure) | `useActionState` |
+| Instant visual feedback before server responds | `useOptimistic` |
+| Just `isPending` for a one-off action | `useTransition` or `useOptimistic(false)` |
+| All of the above | `useActionState` + `useOptimistic` on top |
+
+**Key-based form reset:** Increment a `key` in the returned state on success. Use that key on the form content to remount and reset all internal state — no manual `resetForm()` needed.
+
+**Combining with `useOptimistic`:** `useOptimistic` reads from `useActionState`'s state and shows instant feedback while the action runs:
+
+```tsx
+const [state, formAction, isPending] = useActionState(updateAction, initialState);
+const [optimisticValue, setOptimistic] = useOptimistic(state.value);
 ```
 
 ### Action Props Pattern
@@ -1063,16 +1105,15 @@ Parent (can be a server component):
 </div>
 ```
 
-CSS `:has([data-pending])` bubbles the pending state up without the parent needing to be a client component.
-
 ### Grouped Pending (data-pending + group)
 
-For design components that affect a larger region:
+For sibling elements, use `group` on a common ancestor:
 
 ```tsx
-<div className="group" data-pending={isPending ? '' : undefined}>
-  <div className="group-has-data-pending:opacity-50">
-    <Grid />
+<div className="group">
+  <FilterBar />   {/* sets data-pending internally */}
+  <div className="group-has-data-pending:opacity-50 transition-opacity">
+    <ContentGrid />
   </div>
 </div>
 ```
@@ -1143,6 +1184,72 @@ How it works:
 - `useSuspenseQuery` provides built-in caching — repeated queries show instant cache hits.
 
 This pattern works with any Suspense-enabled data source, not just TanStack Query.
+
+---
+
+## Action State (useActionState)
+
+### Form with Server Response
+
+`useActionState` manages state derived from an action result. The reducer receives `(prevState, payload)` and returns new state. When passed as a form `action`, the payload is `FormData` and React wraps the submission in a transition automatically:
+
+```tsx
+'use client';
+
+import { useActionState, startTransition } from 'react';
+import { saveItem } from '@/lib/actions';
+
+export function CreateForm({ onSuccess }: { onSuccess?: () => void }) {
+  const [{ error, key }, formAction, isPending] = useActionState(
+    async (prev: { error: string | null; key: number }, formData: FormData) => {
+      const result = await saveItem(formData);
+      if ('error' in result) return { ...prev, error: result.error };
+      startTransition(() => onSuccess?.());
+      return { error: null, key: prev.key + 1 };
+    },
+    { error: null, key: 0 }
+  );
+
+  return (
+    <form action={formAction}>
+      <div key={key}>
+        <input name="title" required />
+        <textarea name="description" />
+      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button type="submit" disabled={isPending}>
+        {isPending ? 'Saving...' : 'Save'}
+      </button>
+    </form>
+  );
+}
+```
+
+**Key-based reset:** Incrementing `key` in the returned state remounts form content, resetting all internal state (inputs, `useState` hooks) without a manual `resetForm()`.
+
+**Error handling:** Return expected errors as state and display inline. Throw unexpected errors — `useActionState` rethrows them to the nearest error boundary and cancels all queued actions.
+
+### Combining with useOptimistic
+
+`useOptimistic` reads from `useActionState`'s state for instant feedback:
+
+```tsx
+const [state, dispatchAction, isPending] = useActionState(updateAction, { count: 0 });
+const [optimisticCount, setOptimisticCount] = useOptimistic(state.count);
+
+function handleAdd() {
+  startTransition(() => {
+    setOptimisticCount(c => c + 1);
+    dispatchAction({ type: 'ADD' });
+  });
+}
+```
+
+### When Not to Use
+
+- If you just need optimistic feedback and don't care about the server response, `useOptimistic` alone is simpler.
+- `useActionState` queues actions sequentially — each waits for the previous to complete. For parallel actions, use `useState` + `useTransition` directly.
+- If the form has no validation/error state and no need for auto-reset, a plain form `action` with `useOptimistic(false)` for `isPending` is sufficient.
 
 ---
 
@@ -1350,3 +1457,9 @@ Because the refresh runs inside `startTransition`, it coordinates with `useOptim
 ## Error Boundaries
 
 Next.js `error.tsx` files create error boundaries. Errors thrown inside transitions — including server action failures — automatically bubble to the nearest `error.tsx`. Use toast for expected errors to prevent the boundary from catching them.
+
+---
+
+## When in Doubt
+
+If unsure about the behavior or API of any React primitive (`useOptimistic`, `useActionState`, `useTransition`, `useDeferredValue`, `use`, `Suspense`), consult the official React docs at `https://react.dev/reference/react/<hook-name>` before guessing. These APIs are new and training data may be outdated or incorrect.

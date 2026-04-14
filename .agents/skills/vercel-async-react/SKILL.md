@@ -1,6 +1,6 @@
 ---
 name: vercel-async-react
-description: Guide for fixing common React UX issues — frozen UI during submissions, missing loading states, stale data after navigation, optimistic updates that don't revert on failure, flickering between states, and uncoordinated mutations. Applies React's async primitives (useOptimistic, useTransition, Suspense, useDeferredValue, form actions, action props) to replace useState/useEffect fetch patterns, onClick-based mutations, and manual loading state management. Use this skill when the user reports UI freezing on click, no feedback during async work, data out of sync after navigating, layout shift on load, search/filter feeling sluggish, or wants to add optimistic updates, pending indicators, loading skeletons, or instant-feeling interactions. Also use when the user mentions useOptimistic, useTransition, startTransition, Suspense, useDeferredValue, action props, data-pending, form actions, or asks about handling async in-between states in React.
+description: Guide for fixing common React UX issues — frozen UI during submissions, missing loading states, stale data after navigation, optimistic updates that don't revert on failure, flickering between states, and uncoordinated mutations. Applies React's async primitives (useOptimistic, useTransition, useActionState, Suspense, useDeferredValue, form actions, action props) to replace useState/useEffect fetch patterns, onClick-based mutations, and manual loading state management. Use this skill when the user reports UI freezing on click, no feedback during async work, data out of sync after navigating, layout shift on load, search/filter feeling sluggish, or wants to add optimistic updates, pending indicators, loading skeletons, or instant-feeling interactions. Also use when the user mentions useOptimistic, useTransition, useActionState, startTransition, Suspense, useDeferredValue, action props, data-pending, form actions, or asks about handling async in-between states in React.
 license: MIT
 metadata:
   author: vercel
@@ -27,9 +27,10 @@ Every async interaction creates an in-between state. Each has a primitive:
 |----------|---------|---------------------|-----------|
 | 1 | **Loading boundaries** | "Data is coming" | `<Suspense>` + skeleton fallback |
 | 2 | **Optimistic mutation** | "Done (pending confirmation)" | `useOptimistic` + form `action` |
-| 3 | **Transition feedback** | "Working on it" | `useTransition` or `useOptimistic(false)` |
-| 4 | **Action props** | "Control responded instantly" | Design component with `action` prop |
-| 5 | **Stale-while-revalidate** | "Searching (old results visible)" | `useDeferredValue` + Suspense-enabled source |
+| 3 | **Action state** | "Submitted (here's the result)" | `useActionState` |
+| 4 | **Transition feedback** | "Working on it" | `useTransition` or `useOptimistic(false)` |
+| 5 | **Action props** | "Control responded instantly" | Design component with `action` prop |
+| 6 | **Stale-while-revalidate** | "Searching (old results visible)" | `useDeferredValue` + Suspense-enabled source |
 
 This is an implementation order, not a "pick one" list. Implement every pattern that fits the app. Only skip a pattern if the app has no use case for it.
 
@@ -43,6 +44,7 @@ This is an implementation order, not a "pick one" list. Implement every pattern 
 | Adding to a list | `useOptimistic` + `crypto.randomUUID()` | Shared ID prevents duplicate flash |
 | Move between groups (Kanban, categories) | `useOptimistic` with reducer + `useTransition` | Instant move, auto-revert on failure |
 | Destructive action (delete) | `useOptimistic` or `useTransition` + `data-pending` | Optimistic delete with rollback, or pending feedback |
+| Form submission (create, edit) | `useActionState` | Server response state, `isPending`, key-based reset |
 | Tab / filter switch | `action` prop on design component | Instant highlight, old content stays |
 | Search / filter with async results | `useDeferredValue` + `useSuspenseQuery` | Stale results stay visible while fresh data loads |
 
@@ -184,6 +186,45 @@ A form's `action` prop wraps the callback in a transition automatically — same
 </form>
 ```
 
+### Action State
+
+`useActionState` manages state derived from the result of an action — like `useReducer` but the reducer can be async and perform side effects. It gives you `isPending` for free and queues actions sequentially (each receives the previous result):
+
+```tsx
+const [state, formAction, isPending] = useActionState(
+  async (prev, formData: FormData) => {
+    const result = await submitForm(formData);
+    if (result.error) return { ...prev, error: result.error };
+    return { error: null, key: prev.key + 1 };
+  },
+  { error: null, key: 0 }
+);
+
+<form action={formAction}>
+  <input name="title" required />
+  {state.error && <p>{state.error}</p>}
+  <button disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
+</form>
+```
+
+**When to use `useActionState` vs other primitives:**
+
+| Need | Use |
+|------|-----|
+| Server response state (validation errors, success/failure) | `useActionState` |
+| Instant visual feedback before server responds | `useOptimistic` |
+| Just `isPending` for a one-off action | `useTransition` or `useOptimistic(false)` |
+| All of the above | `useActionState` + `useOptimistic` on top |
+
+**Key-based form reset:** Increment a `key` in the returned state on success. Use that key on the form content to remount and reset all internal state — no manual `resetForm()` needed.
+
+**Combining with `useOptimistic`:** `useOptimistic` reads from `useActionState`'s state and shows instant feedback while the action runs:
+
+```tsx
+const [state, formAction, isPending] = useActionState(updateAction, initialState);
+const [optimisticValue, setOptimistic] = useOptimistic(state.value);
+```
+
 ### Action Props Pattern
 
 Design components (tabs, chips, selects, inline editors, toggles) expose an `action` or `changeAction` prop. Internally, the component wraps the callback in `startTransition` with `useOptimistic`. Consumers just swap one prop name — the component handles async coordination:
@@ -290,6 +331,10 @@ Without the inner `startTransition`, the dialog closes before the board re-rende
 - **`references/implementation.md`** — Step-by-step audit and implementation workflow. Start here.
 - **`references/patterns.md`** — Detailed code patterns for each primitive.
 - **`references/nextjs.md`** — Next.js App Router integration: server actions, `updateTag()`, router behavior, background polling, error boundaries.
+
+## When in Doubt
+
+If unsure about the behavior or API of any React primitive (`useOptimistic`, `useActionState`, `useTransition`, `useDeferredValue`, `use`, `Suspense`), consult the official React docs at `https://react.dev/reference/react/<hook-name>` before guessing. These APIs are new and training data may be outdated or incorrect.
 
 ## Full Compiled Document
 

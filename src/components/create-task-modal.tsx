@@ -1,11 +1,12 @@
 "use client";
 
-import { startTransition, useOptimistic, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { Plus } from "lucide-react";
 import { createTask } from "@/lib/actions";
 import {
   ASSIGNEES,
   LABELS,
+  type Assignee,
   type Label,
   type Priority,
   type Status,
@@ -22,31 +23,62 @@ import { cn } from "@/lib/utils";
 
 export function CreateTaskModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, setIsPending] = useOptimistic(false);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [{ key }, formAction, isPending] = useActionState(
+    async (prev: { key: number }, formData: FormData) => {
+      const title = formData.get("title") as string;
+      if (!title.trim()) return prev;
+
+      await createTask({
+        title,
+        description: formData.get("description") as string,
+        status: (formData.get("status") as Status) || "todo",
+        priority: (formData.get("priority") as Priority) || "medium",
+        assignee: (formData.get("assignee") as string) || ASSIGNEES[0],
+        labels: formData.getAll("label") as Label[],
+      });
+
+      startTransition(() => setIsOpen(false));
+      return { key: prev.key + 1 };
+    },
+    { key: 0 }
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[13px] text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70">
+        <Plus className="size-3.5" />
+        New Task
+      </DialogTrigger>
+
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create Task</DialogTitle>
+        </DialogHeader>
+
+        <form action={formAction}>
+          <CreateTaskFormFields key={key} />
+
+          <DialogFooter className="mt-4">
+            <button
+              type="submit"
+              disabled={isPending}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-40 sm:w-auto"
+            >
+              {isPending ? "Creating..." : "Create Task"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CreateTaskFormFields() {
   const [status, setStatus] = useState<Status>("todo");
   const [priority, setPriority] = useState<Priority>("medium");
-  const [assignee, setAssignee] = useState<string>(ASSIGNEES[0]);
+  const [assignee, setAssignee] = useState<Assignee>(ASSIGNEES[0]);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
-
-  function resetForm() {
-    setTitle("");
-    setDescription("");
-    setStatus("todo");
-    setPriority("medium");
-    setAssignee(ASSIGNEES[0]);
-    setSelectedLabels([]);
-  }
-
-  function toggleLabel(label: Label) {
-    setSelectedLabels((prev) =>
-      prev.includes(label)
-        ? prev.filter((l) => l !== label)
-        : [...prev, label]
-    );
-  }
 
   const statuses: { value: Status; label: string }[] = [
     { value: "todo", label: "Todo" },
@@ -61,175 +93,143 @@ export function CreateTaskModal() {
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[13px] text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70">
-        <Plus className="size-3.5" />
-        New Task
-      </DialogTrigger>
+    <div className="space-y-4 py-1">
+      <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="priority" value={priority} />
+      <input type="hidden" name="assignee" value={assignee} />
+      {selectedLabels.map((l) => (
+        <input key={l} type="hidden" name="label" value={l} />
+      ))}
 
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create Task</DialogTitle>
-        </DialogHeader>
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">Title</label>
+        <input
+          name="title"
+          placeholder="Task title..."
+          required
+          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
+        />
+      </div>
 
-        <form
-          action={async () => {
-            if (!title.trim()) return;
-            setIsPending(true);
-            await createTask({
-              title,
-              description,
-              status,
-              priority,
-              assignee,
-              labels: selectedLabels,
-            });
-            startTransition(() => {
-              resetForm();
-              setIsOpen(false);
-            });
-          }}
-        >
-          <div className="space-y-4 py-1">
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Title
-              </label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Task title..."
-                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
-              />
-            </div>
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Description
+        </label>
+        <textarea
+          name="description"
+          placeholder="Describe the task..."
+          rows={2}
+          className="w-full resize-none rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
+        />
+      </div>
 
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the task..."
-                rows={2}
-                className="w-full resize-none rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Status
-              </label>
-              <div className="flex gap-1">
-                {statuses.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => setStatus(s.value)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-                      status === s.value
-                        ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
-                    )}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Priority
-              </label>
-              <div className="flex gap-1">
-                {priorities.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => setPriority(p.value)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-                      priority === p.value
-                        ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Assignee
-              </label>
-              <div className="flex flex-wrap gap-1">
-                {ASSIGNEES.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => setAssignee(name)}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-                      assignee === name
-                        ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "flex size-4 items-center justify-center rounded-full text-[9px]",
-                        assignee === name
-                          ? "bg-white/[0.12] text-white/70"
-                          : "bg-white/[0.06] text-white/30"
-                      )}
-                    >
-                      {name[0]}
-                    </span>
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Labels
-              </label>
-              <div className="flex flex-wrap gap-1">
-                {LABELS.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => toggleLabel(label)}
-                    className={cn(
-                      "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize transition-colors",
-                      selectedLabels.includes(label)
-                        ? "bg-white/[0.1] text-white/70"
-                        : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]"
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="mt-4">
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Status
+        </label>
+        <div className="flex gap-1">
+          {statuses.map((s) => (
             <button
-              type="submit"
-              disabled={!title.trim() || isPending}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-40 sm:w-auto"
+              key={s.value}
+              type="button"
+              onClick={() => setStatus(s.value)}
+              className={cn(
+                "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
+                status === s.value
+                  ? "bg-white/[0.1] text-white/80"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+              )}
             >
-              {isPending ? "Creating..." : "Create Task"}
+              {s.label}
             </button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Priority
+        </label>
+        <div className="flex gap-1">
+          {priorities.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => setPriority(p.value)}
+              className={cn(
+                "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
+                priority === p.value
+                  ? "bg-white/[0.1] text-white/80"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Assignee
+        </label>
+        <div className="flex flex-wrap gap-1">
+          {ASSIGNEES.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setAssignee(name)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
+                assignee === name
+                  ? "bg-white/[0.1] text-white/80"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-4 items-center justify-center rounded-full text-[9px]",
+                  assignee === name
+                    ? "bg-white/[0.12] text-white/70"
+                    : "bg-white/[0.06] text-white/30"
+                )}
+              >
+                {name[0]}
+              </span>
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Labels
+        </label>
+        <div className="flex flex-wrap gap-1">
+          {LABELS.map((label) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() =>
+                setSelectedLabels((prev) =>
+                  prev.includes(label)
+                    ? prev.filter((l) => l !== label)
+                    : [...prev, label]
+                )
+              }
+              className={cn(
+                "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize transition-colors",
+                selectedLabels.includes(label)
+                  ? "bg-white/[0.1] text-white/70"
+                  : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -485,6 +485,72 @@ This pattern works with any Suspense-enabled data source, not just TanStack Quer
 
 ---
 
+## Action State (useActionState)
+
+### Form with Server Response
+
+`useActionState` manages state derived from an action result. The reducer receives `(prevState, payload)` and returns new state. When passed as a form `action`, the payload is `FormData` and React wraps the submission in a transition automatically:
+
+```tsx
+'use client';
+
+import { useActionState, startTransition } from 'react';
+import { saveItem } from '@/lib/actions';
+
+export function CreateForm({ onSuccess }: { onSuccess?: () => void }) {
+  const [{ error, key }, formAction, isPending] = useActionState(
+    async (prev: { error: string | null; key: number }, formData: FormData) => {
+      const result = await saveItem(formData);
+      if ('error' in result) return { ...prev, error: result.error };
+      startTransition(() => onSuccess?.());
+      return { error: null, key: prev.key + 1 };
+    },
+    { error: null, key: 0 }
+  );
+
+  return (
+    <form action={formAction}>
+      <div key={key}>
+        <input name="title" required />
+        <textarea name="description" />
+      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button type="submit" disabled={isPending}>
+        {isPending ? 'Saving...' : 'Save'}
+      </button>
+    </form>
+  );
+}
+```
+
+**Key-based reset:** Incrementing `key` in the returned state remounts form content, resetting all internal state (inputs, `useState` hooks) without a manual `resetForm()`.
+
+**Error handling:** Return expected errors as state and display inline. Throw unexpected errors — `useActionState` rethrows them to the nearest error boundary and cancels all queued actions.
+
+### Combining with useOptimistic
+
+`useOptimistic` reads from `useActionState`'s state for instant feedback:
+
+```tsx
+const [state, dispatchAction, isPending] = useActionState(updateAction, { count: 0 });
+const [optimisticCount, setOptimisticCount] = useOptimistic(state.count);
+
+function handleAdd() {
+  startTransition(() => {
+    setOptimisticCount(c => c + 1);
+    dispatchAction({ type: 'ADD' });
+  });
+}
+```
+
+### When Not to Use
+
+- If you just need optimistic feedback and don't care about the server response, `useOptimistic` alone is simpler.
+- `useActionState` queues actions sequentially — each waits for the previous to complete. For parallel actions, use `useState` + `useTransition` directly.
+- If the form has no validation/error state and no need for auto-reset, a plain form `action` with `useOptimistic(false)` for `isPending` is sufficient.
+
+---
+
 ## Double-Transition Pattern
 
 State updates after `await` inside an async `startTransition` fall outside the transition scope. This matters when you need to close a dialog, reset a form, or update UI after a mutation completes — those updates run immediately instead of being batched with the re-render from `refresh()`.
