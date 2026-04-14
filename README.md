@@ -2,7 +2,7 @@
 
 A Next.js task board app demonstrating async coordination patterns — optimistic updates, Suspense boundaries, form actions, action props, and pending states. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/async-react).
 
-The [`main`](#) branch has all async coordination patterns applied; the [`plain`](#) branch is the base app with legacy patterns and no feedback.
+The `[main](#)` branch has all async coordination patterns applied; the `[plain](#)` branch is the base app with legacy patterns and no feedback.
 
 ## App Features
 
