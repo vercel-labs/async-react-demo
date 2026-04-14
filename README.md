@@ -22,7 +22,7 @@ The `[main](#)` branch has all async coordination patterns applied; the `[plain]
 | ------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Board              | No `<Suspense>`, page blocks until all columns load                                      | `<Suspense>` boundaries with skeleton fallbacks                                |
 | Drag-and-drop      | `useState` optimistic that never reverts on failure, raw `await` bypasses error boundary | `useOptimistic` (auto-reverts) + `startTransition` (errors bubble to `error.tsx`) |
-| Create task modal  | `useEffect` + `fetch` to load form options, `onClick` submit via API route               | Server data as props, form `action` + server action, `useOptimistic` list add  |
+| Create task modal  | `useEffect` + `fetch` to load form options, `onClick` submit via API route, manual `resetForm()` | `useActionState` + server action, key-based form reset                         |
 | Task card controls | `onClick` → `await` → `setState` for inline priority/assignee, UI freezes                | Form `action` + `useOptimistic`                                                |
 | Status select      | `onClick` → `await` → `setState`, UI freezes during update                               | Form `action` + `useOptimistic`                                                |
 | Assignee select    | `onClick` → `await` → `setState`, no instant feedback                                    | Form `action` + `useOptimistic`                                                |
