@@ -10,7 +10,7 @@ export function StarButton({ taskId }: { taskId: string }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/stars/${taskId}`)
+    fetch(`/api/stars/${taskId}?t=${Date.now()}`)
       .then((r) => r.json())
       .then((data) => {
         setHasStarred(data.hasStarred);

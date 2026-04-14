@@ -17,7 +17,7 @@ export function CommentList({
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchComments = useCallback(async () => {
-    const res = await fetch(`/api/comments/${taskId}`);
+    const res = await fetch(`/api/comments/${taskId}?t=${Date.now()}`);
     const data = await res.json();
     setComments(
       data.map((c: Comment & { createdAt: string }) => ({
