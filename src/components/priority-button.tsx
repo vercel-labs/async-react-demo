@@ -2,7 +2,8 @@
 
 import { useOptimistic } from "react";
 import { ChevronUp } from "lucide-react";
-import { cyclePriority, PRIORITY_CYCLE } from "@/lib/actions";
+import { cyclePriority } from "@/lib/actions";
+import { PRIORITY_CYCLE } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";
 

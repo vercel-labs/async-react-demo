@@ -7,6 +7,7 @@ import {
   getNextTaskId,
   tasks,
   ASSIGNEES,
+  PRIORITY_CYCLE,
   type Assignee,
   type Comment,
   type Label,
@@ -17,12 +18,6 @@ import {
 import { delay } from "./utils";
 
 const DEFAULT_USER = "You";
-
-export const PRIORITY_CYCLE: Record<Priority, Priority> = {
-  low: "medium",
-  medium: "high",
-  high: "low",
-};
 
 export async function cyclePriority(
   taskId: string

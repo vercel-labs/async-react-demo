@@ -230,21 +230,23 @@ const [optimisticItems, removeItem] = useOptimistic(
 - **Every server action that mutates data must invalidate** — call `refresh()` or `updateTag()` so server components re-render with fresh data. Optimistic updates are an overlay; without invalidation, the base data never updates.
 
 ### Shared mutation logic
-When the client needs to predict the server result for an optimistic update (e.g., cycling through enum values: low → medium → high → low), extract the logic into a shared constant or pure function. Server actions can export non-async values alongside async functions:
+When the client needs to predict the server result for an optimistic update (e.g., cycling through enum values: low → medium → high → low), extract the logic into a shared constant or pure function. **Do not put constants in `"use server"` files** — those can only export async functions. Put shared constants in a separate file (e.g., `data.ts`, `constants.ts`) and import from both the server action and the client component:
 
 ```tsx
-// actions.ts
+// data.ts (shared — not "use server")
 export const PRIORITY_CYCLE: Record<Priority, Priority> = {
   low: 'medium', medium: 'high', high: 'low',
 };
 
+// actions.ts ("use server")
+import { PRIORITY_CYCLE } from './data';
+
 export async function cyclePriority(id: string) {
-  'use server';
   // uses PRIORITY_CYCLE internally
 }
 ```
 
-The client imports `PRIORITY_CYCLE` to compute the optimistic value without duplicating the logic.
+The client imports `PRIORITY_CYCLE` from `data.ts` to compute the optimistic value without duplicating the logic.
 
 ### Complex forms with controlled state
 For modals or forms with many fields (multi-select, radio groups, dependent selects), keep `useState` for the UI controls. Wrap the submission in a `<form action>` that reads from the controlled state directly — form actions accept closures, not just `FormData`:
@@ -306,6 +308,7 @@ Parent (can be a server component):
 ```
 
 **Rules:**
+- `data-pending` is only useful when a parent element has `has-data-pending:` styles to react to it. Always add both parts — setting `data-pending` without a parent reacting to it has no visible effect.
 - `data-pending` + CSS `:has()` bubbles pending state up without client component wrappers.
 - For grouped regions, use `group-has-data-pending:opacity-50`.
 

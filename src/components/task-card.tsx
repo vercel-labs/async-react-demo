@@ -2,10 +2,11 @@
 
 import { useOptimistic } from "react";
 import { useRouter } from "next/navigation";
-import { cyclePriority, reassignTask, PRIORITY_CYCLE } from "@/lib/actions";
+import { cyclePriority, reassignTask } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import {
   ASSIGNEES,
+  PRIORITY_CYCLE,
   type Assignee,
   type Label,
   type Priority,

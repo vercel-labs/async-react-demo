@@ -38,7 +38,7 @@ export function CommentList({
       if (action.type === "delete") {
         return state.map((c) =>
           c.id === action.id ? { ...c, deleting: true } : c
-        ) as (SerializedComment & { deleting?: boolean })[];
+        );
       }
       return state;
     }
@@ -85,11 +85,7 @@ export function CommentList({
         {optimisticComments.map((comment) => (
           <div
             key={comment.id}
-            className={`group/comment rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.02] ${
-              "deleting" in comment && (comment as SerializedComment & { deleting?: boolean }).deleting
-                ? "opacity-50"
-                : ""
-            }`}
+            className="group/comment rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.02] has-data-pending:opacity-50"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2.5">

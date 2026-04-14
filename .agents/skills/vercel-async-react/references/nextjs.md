@@ -62,6 +62,50 @@ export async function addComment(slug: string, formData: FormData): Promise<Acti
 
 ---
 
+## Keeping Pages Non-Async (Static Shell)
+
+To maximize the static shell with `cacheComponents`, pages should be **non-async**. Dynamic data access (`searchParams`, `params`, uncached fetches) must happen inside async server components wrapped in `<Suspense>`.
+
+`searchParams` and `params` are promises in Next.js 16. Pass them as props into async components inside Suspense instead of awaiting them at the page level:
+
+```tsx
+// ✅ Non-async page — static shell renders instantly
+export default function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  return (
+    <div>
+      <Header />
+      <Suspense fallback={<ResultsSkeleton />}>
+        <Results searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function Results({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const data = await fetchResults(q);
+  return <ResultsList data={data} />;
+}
+```
+
+Client components using `useSearchParams()` are also dynamic — wrap them in `<Suspense>`:
+
+```tsx
+<Suspense>
+  <FilterBar />  {/* uses useSearchParams() internally */}
+</Suspense>
+```
+
+---
+
 ## Router Behavior
 
 ### Navigation = Transition

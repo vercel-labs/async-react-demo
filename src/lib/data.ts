@@ -30,6 +30,12 @@ export type Comment = {
   createdAt: Date;
 };
 
+export const PRIORITY_CYCLE: Record<Priority, Priority> = {
+  low: "medium",
+  medium: "high",
+  high: "low",
+};
+
 export const LABELS: Label[] = [
   "design",
   "frontend",

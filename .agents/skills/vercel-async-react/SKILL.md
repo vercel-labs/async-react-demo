@@ -218,7 +218,7 @@ This pattern belongs in the design layer — custom components, component librar
 
 ### The `data-pending` CSS Pattern
 
-Show pending states without making parent components client components. Set `data-pending` on the transitioning element, style ancestors with CSS `:has()`:
+Show pending states without making parent components client components. Set `data-pending` on the transitioning element, **and add `has-data-pending:` styles on a parent** that should react. Both parts are required — `data-pending` without a parent reacting to it has no visible effect:
 
 ```tsx
 <button data-pending={isPending ? '' : undefined}>Delete</button>
@@ -260,6 +260,9 @@ No competing data layers. Everything goes through React.
 - **Competing data layers** — Don't mix `useOptimistic` with separate `useState` for the same data. One source of truth (server props), one overlay (`useOptimistic`).
 - **Wrong boundary structure** — One big `<Suspense>` at the root means nothing renders until everything loads. But blindly splitting into siblings can cause layout shift (CLS) if a component above has unknown height. Choose boundaries based on the loading state you want for the page. Don't try to fix existing skeleton dimensions or CLS in fallbacks — that's a design concern, not an async coordination concern.
 - **Using updater instead of reducer when base state can change** — If the base data might change while your Action is pending (e.g., from polling), use a reducer. Updaters only see state from when the Transition started; reducers re-run with the latest base value.
+- **Raw `await` on server actions bypasses error boundaries** — Calling `await serverAction()` inside an `onClick` handler is not wrapped in a transition. If the action throws, the error is unhandled — it won't reach `error.tsx`. Wrap in `startTransition` or use a form `action` so errors bubble to the nearest error boundary and `useOptimistic` auto-reverts.
+- **Exporting constants from `"use server"` files** — `"use server"` files can only export async functions. Shared constants (cycle maps, enum lists, option arrays) must live in a separate file (e.g., `data.ts`) and be imported by both the server action and the client component.
+- **`data-pending` without a parent reacting to it** — Setting `data-pending` on a button does nothing by itself. A parent element must have `has-data-pending:` styles (e.g., `has-data-pending:opacity-50`) to create a visible effect. Always add both parts.
 - **Silent optimistic rollback** — `useOptimistic` auto-reverts on failure, but the user sees the UI snap back with no explanation. Pair rollback with user-visible feedback: use `toast.error()` inside a `try/catch` in the transition, or add an `error.tsx` boundary for unexpected failures. The rollback handles the UI; the feedback handles the user.
 - **State updates after `await` fall outside the transition** — Inside an async `startTransition`, state updates after an `await` are not part of the transition. This means cleanup like closing a dialog or resetting a form runs immediately instead of being batched with the re-render. Use a double-transition: wrap post-`await` state updates in another `startTransition`:
 

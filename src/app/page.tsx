@@ -5,20 +5,35 @@ import { CreateTaskModal } from "@/components/create-task-modal";
 import { getTasks } from "@/lib/queries";
 import type { Label } from "@/lib/data";
 
-async function TaskCount({ label }: { label?: Label }) {
-  const allTasks = await getTasks(label);
-  return (
-    <span className="font-mono text-xs">{allTasks.length}</span>
-  );
-}
-
-export default async function Home({
+async function TaskCount({
   searchParams,
 }: {
   searchParams: Promise<{ label?: string }>;
 }) {
   const { label } = await searchParams;
+  const allTasks = await getTasks(label as Label | undefined);
+  return (
+    <>
+      <span className="font-mono text-xs">{allTasks.length}</span> tasks
+      {label ? ` · ${label}` : ""}
+    </>
+  );
+}
 
+async function BoardWithParams({
+  searchParams,
+}: {
+  searchParams: Promise<{ label?: string }>;
+}) {
+  const { label } = await searchParams;
+  return <Board label={label as Label | undefined} />;
+}
+
+export default function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ label?: string }>;
+}) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -26,23 +41,27 @@ export default async function Home({
           <h1 className="text-xl font-semibold tracking-tight">Board</h1>
           <p className="mt-1 text-sm text-white/40">
             <Suspense
-              fallback={<span className="font-mono text-xs">–</span>}
+              fallback={
+                <span className="font-mono text-xs">–</span>
+              }
             >
-              <TaskCount label={label as Label | undefined} />
-            </Suspense>{" "}
-            tasks
-            {label ? ` · ${label}` : ""}
+              <TaskCount searchParams={searchParams} />
+            </Suspense>
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <LabelFilter />
+          <Suspense>
+            <LabelFilter />
+          </Suspense>
           <CreateTaskModal />
         </div>
       </div>
 
-      <Suspense fallback={<BoardSkeleton />}>
-        <Board label={label as Label | undefined} />
-      </Suspense>
+      <div className="has-data-pending:animate-pulse">
+        <Suspense fallback={<BoardSkeleton />}>
+          <BoardWithParams searchParams={searchParams} />
+        </Suspense>
+      </div>
     </div>
   );
 }
