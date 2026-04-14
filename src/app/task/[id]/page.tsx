@@ -2,10 +2,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { getTask } from "@/lib/queries";
-import { StatusSelect } from "@/components/status-select";
-import { AssigneeSelect } from "@/components/assignee-select";
-import { PriorityButton } from "@/components/priority-button";
-import { CommentList } from "@/components/comment-list";
+import { StatusSelect } from "./_components/status-select";
+import { AssigneeSelect } from "./_components/assignee-select";
+import { PriorityButton } from "./_components/priority-button";
+import { CommentList } from "./_components/comment-list";
 import { cn, timeAgo } from "@/lib/utils";
 
 const labelStyle = "bg-white/[0.06] text-white/50";
