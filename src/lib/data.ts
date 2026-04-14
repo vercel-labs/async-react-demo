@@ -1,4 +1,5 @@
-export type Status = "active" | "completed" | "archived";
+export type Status = "todo" | "in-progress" | "done";
+export type Priority = "low" | "medium" | "high";
 export type Label =
   | "design"
   | "frontend"
@@ -7,13 +8,17 @@ export type Label =
   | "bug"
   | "feature";
 
+export const ASSIGNEES = ["Sarah", "Marcus", "Elena", "Jordan"] as const;
+export type Assignee = (typeof ASSIGNEES)[number];
+
 export type Task = {
   id: string;
   title: string;
   description: string;
   status: Status;
+  priority: Priority;
   labels: Label[];
-  assignee: string;
+  assignee: Assignee;
   createdAt: Date;
 };
 
@@ -25,22 +30,20 @@ export type Comment = {
   createdAt: Date;
 };
 
-export type Vote = {
-  taskId: string;
-  userName: string;
-};
-
-export type Star = {
-  taskId: string;
-  userName: string;
-};
+export const LABELS: Label[] = [
+  "design",
+  "frontend",
+  "backend",
+  "devops",
+  "bug",
+  "feature",
+];
 
 type Store = {
   tasks: Task[];
   comments: Comment[];
-  votes: Vote[];
-  stars: Star[];
   commentIdCounter: number;
+  taskIdCounter: number;
 };
 
 const now = Date.now();
@@ -55,7 +58,8 @@ function createSeedData(): Store {
         title: "Redesign settings page",
         description:
           "The current settings page has poor information hierarchy. Needs a full redesign with grouped sections and better spacing.",
-        status: "active",
+        status: "in-progress",
+        priority: "high",
         labels: ["design", "frontend"],
         assignee: "Sarah",
         createdAt: new Date(now - 2 * day),
@@ -65,7 +69,8 @@ function createSeedData(): Store {
         title: "Fix login redirect loop",
         description:
           "Users are getting stuck in a redirect loop when their session expires mid-navigation. Need to clear stale tokens.",
-        status: "active",
+        status: "in-progress",
+        priority: "high",
         labels: ["bug", "backend"],
         assignee: "Marcus",
         createdAt: new Date(now - 3 * day),
@@ -75,7 +80,8 @@ function createSeedData(): Store {
         title: "Add dark mode toggle",
         description:
           "Implement a theme toggle in the header using CSS custom properties. Should persist preference to localStorage.",
-        status: "completed",
+        status: "done",
+        priority: "medium",
         labels: ["feature", "frontend"],
         assignee: "Elena",
         createdAt: new Date(now - 5 * day),
@@ -85,7 +91,8 @@ function createSeedData(): Store {
         title: "Set up CI/CD pipeline",
         description:
           "Configure GitHub Actions for automated testing, linting, and deployment to staging on PR merge.",
-        status: "completed",
+        status: "done",
+        priority: "medium",
         labels: ["devops"],
         assignee: "Jordan",
         createdAt: new Date(now - 7 * day),
@@ -95,7 +102,8 @@ function createSeedData(): Store {
         title: "Migrate database to PostgreSQL",
         description:
           "Move from SQLite to PostgreSQL for production. Update connection pooling, run migration scripts, verify data integrity.",
-        status: "active",
+        status: "todo",
+        priority: "high",
         labels: ["backend", "devops"],
         assignee: "Marcus",
         createdAt: new Date(now - 1 * day),
@@ -105,7 +113,8 @@ function createSeedData(): Store {
         title: "Design system documentation",
         description:
           "Document all design tokens, component variants, and usage patterns. Publish as an internal Storybook site.",
-        status: "active",
+        status: "todo",
+        priority: "low",
         labels: ["design"],
         assignee: "Sarah",
         createdAt: new Date(now - 4 * day),
@@ -115,7 +124,8 @@ function createSeedData(): Store {
         title: "Fix mobile nav overflow",
         description:
           "On small screens the navigation menu overflows horizontally. Need to switch to a hamburger menu below 768px.",
-        status: "active",
+        status: "in-progress",
+        priority: "medium",
         labels: ["bug", "frontend"],
         assignee: "Elena",
         createdAt: new Date(now - 6 * hour),
@@ -125,7 +135,8 @@ function createSeedData(): Store {
         title: "Add search functionality",
         description:
           "Implement full-text search across tasks with debounced input and highlighted results.",
-        status: "active",
+        status: "todo",
+        priority: "medium",
         labels: ["feature", "frontend"],
         assignee: "Jordan",
         createdAt: new Date(now - 12 * hour),
@@ -135,7 +146,8 @@ function createSeedData(): Store {
         title: "API rate limiting",
         description:
           "Implement rate limiting on public API endpoints using a sliding window counter in Redis.",
-        status: "archived",
+        status: "todo",
+        priority: "low",
         labels: ["backend", "devops"],
         assignee: "Marcus",
         createdAt: new Date(now - 14 * day),
@@ -145,7 +157,8 @@ function createSeedData(): Store {
         title: "Onboarding flow redesign",
         description:
           "Create a step-by-step onboarding wizard for new users. Include workspace setup, team invites, and a sample project.",
-        status: "active",
+        status: "in-progress",
+        priority: "high",
         labels: ["design", "feature"],
         assignee: "Sarah",
         createdAt: new Date(now - 2 * day),
@@ -155,7 +168,8 @@ function createSeedData(): Store {
         title: "Fix date formatting inconsistency",
         description:
           "Some dates show as relative (2h ago) and others as absolute (Jan 5). Standardize to relative everywhere with a tooltip for absolute.",
-        status: "completed",
+        status: "done",
+        priority: "low",
         labels: ["bug", "frontend"],
         assignee: "Elena",
         createdAt: new Date(now - 10 * day),
@@ -165,7 +179,8 @@ function createSeedData(): Store {
         title: "Implement webhook system",
         description:
           "Allow users to register webhook URLs and receive POST notifications on task status changes.",
-        status: "archived",
+        status: "todo",
+        priority: "medium",
         labels: ["feature", "backend"],
         assignee: "Jordan",
         createdAt: new Date(now - 21 * day),
@@ -230,29 +245,8 @@ function createSeedData(): Store {
         createdAt: new Date(now - 2 * hour),
       },
     ],
-    votes: [
-      { taskId: "2", userName: "Sarah" },
-      { taskId: "2", userName: "Elena" },
-      { taskId: "2", userName: "Jordan" },
-      { taskId: "5", userName: "Sarah" },
-      { taskId: "5", userName: "Elena" },
-      { taskId: "7", userName: "Marcus" },
-      { taskId: "7", userName: "Sarah" },
-      { taskId: "7", userName: "Jordan" },
-      { taskId: "7", userName: "Elena" },
-      { taskId: "1", userName: "Jordan" },
-      { taskId: "8", userName: "Sarah" },
-      { taskId: "10", userName: "Marcus" },
-      { taskId: "10", userName: "Elena" },
-    ],
-    stars: [
-      { taskId: "1", userName: "Sarah" },
-      { taskId: "2", userName: "Sarah" },
-      { taskId: "5", userName: "Marcus" },
-      { taskId: "7", userName: "Elena" },
-      { taskId: "8", userName: "Jordan" },
-    ],
     commentIdCounter: 9,
+    taskIdCounter: 13,
   };
 }
 
@@ -260,13 +254,21 @@ const globalStore = globalThis as unknown as { __store?: Store };
 if (!globalStore.__store) {
   globalStore.__store = createSeedData();
 }
+if (!globalStore.__store.taskIdCounter || isNaN(globalStore.__store.taskIdCounter)) {
+  globalStore.__store.taskIdCounter = 100;
+}
+globalStore.__store.tasks = globalStore.__store.tasks.filter(
+  (t) => t.id && t.id !== "NaN"
+);
 const store = globalStore.__store;
 
 export const tasks = store.tasks;
 export const comments = store.comments;
-export const votes = store.votes;
-export const stars = store.stars;
 
 export function getNextCommentId() {
   return `c${store.commentIdCounter++}`;
+}
+
+export function getNextTaskId() {
+  return `${store.taskIdCounter++}`;
 }

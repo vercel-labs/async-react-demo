@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getTask, getVoteCount, hasUserVoted, getCurrentUser } from "@/lib/queries";
-import { VoteButton } from "@/components/vote-button";
-import { StarButton } from "@/components/star-button";
+import { getTask, getCurrentUser } from "@/lib/queries";
+import { StatusSelect } from "@/components/status-select";
+import { AssigneeSelect } from "@/components/assignee-select";
+import { PriorityButton } from "@/components/priority-button";
 import { CommentList } from "@/components/comment-list";
-import { cn } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 
 const labelStyle = "bg-white/[0.06] text-white/50";
-const statusStyle = "bg-white/[0.08] text-white/60";
 
 export default async function TaskPage({
   params,
@@ -16,12 +16,7 @@ export default async function TaskPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [task, voteCount, voted, user] = await Promise.all([
-    getTask(id),
-    getVoteCount(id),
-    hasUserVoted(id),
-    getCurrentUser(),
-  ]);
+  const [task, user] = await Promise.all([getTask(id), getCurrentUser()]);
 
   if (!task) notFound();
 
@@ -29,61 +24,58 @@ export default async function TaskPage({
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <Link
         href="/"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/40 transition-colors hover:text-white/60"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/30 transition-colors hover:text-white/60"
       >
-        <ArrowLeft className="size-4" />
-        Back to tasks
+        <ArrowLeft className="size-3.5" />
+        Back
       </Link>
 
-      <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-6">
-        <div className="mb-4 flex items-start justify-between">
-          <div className="flex-1">
-            <div className="mb-2 flex items-center gap-2">
+      <div className="mb-8 rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
+        <div className="mb-4">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {task.labels.map((l) => (
               <span
+                key={l}
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize",
-                  statusStyle
+                  "rounded-full px-2 py-0.5 font-mono text-[10px]",
+                  labelStyle
                 )}
               >
-                {task.status}
+                {l}
               </span>
-              <div className="flex gap-1.5">
-                {task.labels.map((l) => (
-                  <span
-                    key={l}
-                    className={cn(
-                      "rounded-full px-2 py-0.5 font-mono text-[10px]",
-                      labelStyle
-                    )}
-                  >
-                    {l}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              {task.title}
-            </h1>
+            ))}
+            <span className="font-mono text-[10px] text-white/20">
+              {timeAgo(task.createdAt)}
+            </span>
           </div>
-          <StarButton taskId={task.id} />
+          <h1 className="text-lg font-semibold tracking-tight">
+            {task.title}
+          </h1>
         </div>
 
-        <p className="mb-6 text-sm leading-relaxed text-white/60">
+        <p className="mb-6 text-sm leading-relaxed text-white/50">
           {task.description}
         </p>
 
-        <div className="flex items-center justify-between border-t border-white/10 pt-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-6 items-center justify-center rounded-full bg-white/10 font-mono text-[10px] text-white/60">
-              {task.assignee[0]}
-            </div>
-            <span className="text-sm text-white/50">{task.assignee}</span>
+        <div className="space-y-3 border-t border-white/[0.06] pt-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-white/30">Status</span>
+            <StatusSelect taskId={task.id} initialStatus={task.status} />
           </div>
-          <VoteButton
-            taskId={task.id}
-            initialCount={voteCount}
-            initialHasVoted={voted}
-          />
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-white/30">Assignee</span>
+            <AssigneeSelect
+              taskId={task.id}
+              initialAssignee={task.assignee}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-white/30">Priority</span>
+            <PriorityButton
+              taskId={task.id}
+              initialPriority={task.priority}
+            />
+          </div>
         </div>
       </div>
 

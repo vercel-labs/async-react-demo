@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { addComment } from "@/lib/actions";
 
 export function CommentForm({
@@ -24,7 +24,7 @@ export function CommentForm({
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="relative">
       <input
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -34,16 +34,16 @@ export function CommentForm({
             handleSubmit();
           }
         }}
-        placeholder="Add a comment..."
-        className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+        placeholder="Write a comment..."
+        className="w-full rounded-lg border border-white/[0.06] bg-white/[0.02] py-2.5 pl-4 pr-10 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.12] focus:outline-none"
         disabled={isSubmitting}
       />
       <button
         onClick={handleSubmit}
         disabled={!content.trim() || isSubmitting}
-        className="rounded-lg bg-white/10 px-3 py-2 text-white/60 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-40"
+        className="absolute right-2 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md bg-white/[0.08] text-white/50 transition-colors hover:bg-white/[0.12] hover:text-white/70 disabled:opacity-0"
       >
-        <Send className="size-4" />
+        <ArrowUp className="size-3.5" />
       </button>
     </div>
   );

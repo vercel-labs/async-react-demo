@@ -10,14 +10,14 @@ type ChipGroupProps = {
 
 export function ChipGroup({ items, value, onChange }: ChipGroupProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1.5">
       <button
         onClick={() => onChange(null)}
         className={cn(
-          "rounded-full px-3 py-1 font-mono text-xs transition-colors",
+          "rounded-full border px-3 py-1 font-mono text-[11px] transition-all",
           value === null
-            ? "bg-white/15 text-white"
-            : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70"
+            ? "border-white/[0.12] bg-white/[0.06] text-white"
+            : "border-transparent text-white/35 hover:text-white/55"
         )}
       >
         All
@@ -27,10 +27,10 @@ export function ChipGroup({ items, value, onChange }: ChipGroupProps) {
           key={item.value}
           onClick={() => onChange(item.value === value ? null : item.value)}
           className={cn(
-            "rounded-full px-3 py-1 font-mono text-xs transition-colors",
+            "rounded-full border px-3 py-1 font-mono text-[11px] transition-all",
             item.value === value
-              ? "bg-white/15 text-white"
-              : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70"
+              ? "border-white/[0.12] bg-white/[0.06] text-white"
+              : "border-transparent text-white/35 hover:text-white/55"
           )}
         >
           {item.label}

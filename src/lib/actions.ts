@@ -4,9 +4,12 @@ import { cookies } from "next/headers";
 import {
   comments,
   getNextCommentId,
-  stars,
-  votes,
+  tasks,
+  ASSIGNEES,
+  type Assignee,
   type Comment,
+  type Priority,
+  type Status,
 } from "./data";
 import { delay } from "./utils";
 
@@ -25,32 +28,46 @@ export async function setUserName(formData: FormData) {
   });
 }
 
-export async function toggleStar(taskId: string) {
-  await delay(600);
-  const userName = await getCurrentUser();
-  if (!userName) return;
+const priorityCycle: Record<Priority, Priority> = {
+  low: "medium",
+  medium: "high",
+  high: "low",
+};
 
-  const idx = stars.findIndex(
-    (s) => s.taskId === taskId && s.userName === userName
-  );
-  if (idx >= 0) {
-    stars.splice(idx, 1);
-  } else {
-    stars.push({ taskId, userName });
-  }
+export async function cyclePriority(
+  taskId: string
+): Promise<Priority | null> {
+  await delay(500);
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return null;
+  task.priority = priorityCycle[task.priority];
+  return task.priority;
 }
 
-export async function upvoteTask(taskId: string) {
+export async function updateStatus(
+  taskId: string,
+  newStatus: Status
+): Promise<Status | null> {
   await delay(500);
-  const userName = await getCurrentUser();
-  if (!userName) return;
+  if (Math.random() < 0.3) {
+    throw new Error("Failed to update status — server error");
+  }
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return null;
+  task.status = newStatus;
+  return task.status;
+}
 
-  const existing = votes.find(
-    (v) => v.taskId === taskId && v.userName === userName
-  );
-  if (existing) return;
-
-  votes.push({ taskId, userName });
+export async function reassignTask(
+  taskId: string,
+  newAssignee: string
+): Promise<Assignee | null> {
+  await delay(500);
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return null;
+  if (!ASSIGNEES.includes(newAssignee as Assignee)) return null;
+  task.assignee = newAssignee as Assignee;
+  return task.assignee;
 }
 
 export async function addComment(

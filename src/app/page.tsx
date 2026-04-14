@@ -1,35 +1,34 @@
-import { TaskGrid } from "@/components/task-grid";
-import { StatusTabs } from "@/components/status-tabs";
+import { Board } from "@/components/board";
 import { LabelFilter } from "@/components/label-filter";
-import type { Label, Status } from "@/lib/data";
+import { CreateTaskModal } from "@/components/create-task-modal";
+import { getTasks } from "@/lib/queries";
+import type { Label } from "@/lib/data";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; label?: string }>;
+  searchParams: Promise<{ label?: string }>;
 }) {
-  const { status, label } = await searchParams;
+  const { label } = await searchParams;
+  const allTasks = await getTasks(label as Label | undefined);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 pb-20 sm:px-6">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
-          <p className="mt-1 text-sm text-white/50">
-            Track and manage your team&apos;s work
+          <h1 className="text-xl font-semibold tracking-tight">Board</h1>
+          <p className="mt-1 text-sm text-white/40">
+            <span className="font-mono text-xs">{allTasks.length}</span> tasks
+            {label ? ` · ${label}` : ""}
           </p>
         </div>
-        <StatusTabs />
+        <div className="flex items-center gap-3">
+          <LabelFilter />
+          <CreateTaskModal />
+        </div>
       </div>
 
-      <div className="mb-6">
-        <LabelFilter />
-      </div>
-
-      <TaskGrid
-        status={status as Status | undefined}
-        label={label as Label | undefined}
-      />
+      <Board label={label as Label | undefined} />
     </div>
   );
 }

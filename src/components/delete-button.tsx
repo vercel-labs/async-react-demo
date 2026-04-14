@@ -18,7 +18,7 @@ export function DeleteButton({
   return (
     <button
       onClick={handleClick}
-      className="text-white/20 transition-colors hover:text-white/50"
+      className="mt-0.5 rounded p-1 text-white/15 transition-colors hover:bg-white/[0.06] hover:text-white/40"
       aria-label="Delete comment"
     >
       <Trash2 className="size-3" />
