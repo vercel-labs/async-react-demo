@@ -45,6 +45,7 @@ This is an implementation order, not a "pick one" list. Implement every pattern 
 | Move between groups (Kanban, categories) | `useOptimistic` with reducer + `useTransition` | Instant move, auto-revert on failure |
 | Destructive action (delete) | `useOptimistic` or `useTransition` + `data-pending` | Optimistic delete with rollback, or pending feedback |
 | Form submission (create, edit) | `useActionState` | Server response state, `isPending`, key-based reset |
+| Chat / comment input | `useOptimistic` + immediate form clear | Input clears instantly, optimistic list add |
 | Tab / filter switch | `action` prop on design component | Instant highlight, old content stays |
 | Search / filter with async results | `useDeferredValue` + `useSuspenseQuery` | Stale results stay visible while fresh data loads |
 
@@ -184,6 +185,20 @@ A form's `action` prop wraps the callback in a transition automatically — same
 }}>
   <button type="submit">Submit</button>
 </form>
+```
+
+`formAction` on a button works the same way — it overrides the form's `action` and auto-wraps in a transition. This is useful for reusable submit button design components: the consumer keeps a plain `<form>`, and the button handles pending state internally via `formAction`:
+
+```tsx
+<form>
+  <input name="content" required />
+  <SubmitButton action={submitAction}>Post</SubmitButton>
+</form>
+
+// Inside SubmitButton — formAction handles the transition
+<button type="submit" formAction={submitAction} disabled={isPending}>
+  {isPending ? 'Posting...' : children}
+</button>
 ```
 
 ### Action State

@@ -29,7 +29,7 @@ export function CommentList({
       state,
       action:
         | { type: "add"; comment: SerializedComment }
-        | { type: "delete"; id: string }
+        | { type: "delete"; id: string },
     ) => {
       if (action.type === "add") {
         if (state.some((c) => c.id === action.comment.id)) return state;
@@ -37,11 +37,11 @@ export function CommentList({
       }
       if (action.type === "delete") {
         return state.map((c) =>
-          c.id === action.id ? { ...c, deleting: true } : c
+          c.id === action.id ? { ...c, deleting: true } : c,
         );
       }
       return state;
-    }
+    },
   );
 
   async function handleAddAction(content: string) {
@@ -94,14 +94,14 @@ export function CommentList({
                 </div>
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-[13px] font-medium text-white/70">
+                    <span className="text-[13px] font-medium text-white/85">
                       {comment.userName}
                     </span>
-                    <span className="font-mono text-[10px] text-white/20">
+                    <span className="font-mono text-[10px] text-white/30">
                       {timeAgo(new Date(comment.createdAt))}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-white/50">
+                  <p className="mt-0.5 text-[13px] leading-relaxed text-white/65">
                     {comment.content}
                   </p>
                 </div>

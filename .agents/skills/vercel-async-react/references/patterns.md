@@ -206,31 +206,40 @@ Consumer usage:
 
 The formatted display updates instantly on commit because the function receives the optimistic value.
 
-### Pending Indicator with useOptimistic
+### SubmitButton — formAction with Pending Indicator
 
-A design component can use `useOptimistic(false)` to show pending state without `useTransition`:
+A reusable submit button that wraps any form's submission in a transition with pending state. Uses `formAction` on the button instead of `action` on the form — this auto-wraps in a transition (like form `action`) and passes `FormData`:
 
 ```tsx
-export function SubmitButton({ action, children }) {
+'use client';
+
+import { useOptimistic } from 'react';
+
+type SubmitButtonProps = React.ComponentProps<'button'> & {
+  action: (formData: FormData) => void | Promise<void>;
+  onSubmit?: (formData: FormData) => void;
+};
+
+export function SubmitButton({ children, action, onSubmit, disabled, ...props }: SubmitButtonProps) {
   const [isPending, setIsPending] = useOptimistic(false);
 
+  async function submitAction(formData: FormData) {
+    onSubmit?.(formData);
+    setIsPending(true);
+    await action(formData);
+  }
+
   return (
-    <button
-      disabled={isPending}
-      onClick={() => {
-        startTransition(async () => {
-          setIsPending(true);
-          await action();
-        });
-      }}
-    >
+    <button type="submit" formAction={submitAction} disabled={isPending || disabled} {...props}>
       {isPending ? 'Submitting...' : children}
     </button>
   );
 }
 ```
 
-This pattern automatically shows pending state however the `action` prop is used — state update, navigation, POST, or any combination.
+**Why `formAction` on the button instead of `action` on the form:** The consumer keeps a plain `<form>` and drops in `<SubmitButton>` — the button's `formAction` overrides the form's `action`. This makes the design component composable: the consumer controls the form, the button handles pending state. No `startTransition` needed — `formAction` wraps in a transition automatically.
+
+**`onSubmit` callback:** Fires synchronously before the transition starts — useful for immediate side effects like clearing an input or closing a dropdown (same role as `onChange` on action-prop design components).
 
 ---
 
@@ -367,6 +376,59 @@ async function submitAction(formData: FormData) {
 ```
 
 Pass the client-generated ID to the server action so the optimistic item and real response share the same key. Use a reducer (not an updater) so that if the base list changes during the Action (e.g., from polling), React re-runs the reducer with the latest data.
+
+### Immediate Form Clearing
+
+For chat/comment UIs, the input should clear immediately when the user submits — not after the server responds. Two approaches:
+
+**Controlled input — save value, clear state, pass saved value:**
+
+```tsx
+'use client';
+
+import { useState, useOptimistic, useRef } from 'react';
+
+export function CommentForm({ addAction }: { addAction: (content: string) => Promise<void> }) {
+  const [content, setContent] = useState('');
+  const [isPending, setIsPending] = useOptimistic(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  return (
+    <form
+      ref={formRef}
+      action={async () => {
+        if (!content.trim()) return;
+        setIsPending(true);
+        const text = content;
+        setContent('');
+        await addAction(text);
+      }}
+    >
+      <input value={content} onChange={e => setContent(e.target.value)} disabled={isPending} />
+      <button type="submit" disabled={!content.trim() || isPending}>Send</button>
+    </form>
+  );
+}
+```
+
+The key: save `content` to a local variable *before* clearing. `setContent('')` runs inside the transition so the input clears optimistically. The saved `text` is passed to the action.
+
+**Uncontrolled input — `formRef.reset()` before await:**
+
+```tsx
+async function submitAction(formData: FormData) {
+  formRef.current?.reset();
+  const result = await addComment(slug, formData);
+  if (!result.success) toast.error(result.error);
+}
+
+<form ref={formRef}>
+  <input name="content" required />
+  <SubmitButton action={submitAction}>Post</SubmitButton>
+</form>
+```
+
+Call `formRef.current?.reset()` at the top of the action — the input clears before the `await`. This works with uncontrolled inputs where you read values from `FormData`. Note: React's automatic form reset after `formAction` completes would also clear the input, but only *after* the action finishes — `formRef.reset()` makes it immediate.
 
 ---
 
