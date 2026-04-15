@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";
 
 const priorityConfig: Record<Priority, { label: string; class: string }> = {
-  low: { label: "Low", class: "text-blue-400/60 border-blue-400/15" },
-  medium: { label: "Med", class: "text-amber-400/70 border-amber-400/20" },
-  high: { label: "High", class: "text-red-400/80 border-red-400/25" },
+  low: { label: "Low", class: "text-white/40 border-white/10" },
+  medium: { label: "Med", class: "text-white/60 border-white/15" },
+  high: { label: "High", class: "text-white/80 border-white/20" },
 };
 
 export function PriorityButton({

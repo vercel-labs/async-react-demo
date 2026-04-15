@@ -3,7 +3,6 @@ import { StatusSelect } from "./status-select";
 import { AssigneeSelect } from "./assignee-select";
 import { PriorityButton } from "./priority-button";
 import { cn, timeAgo } from "@/lib/utils";
-import { labelColor } from "@/lib/label-colors";
 import type { Task } from "@/lib/data";
 
 export async function TaskDetail({
@@ -22,10 +21,7 @@ export async function TaskDetail({
           {task.labels.map((l) => (
             <span
               key={l}
-              className={cn(
-                "rounded-full px-2 py-0.5 font-mono text-[10px]",
-                labelColor[l]
-              )}
+              className="rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] text-white/50"
             >
               {l}
             </span>
