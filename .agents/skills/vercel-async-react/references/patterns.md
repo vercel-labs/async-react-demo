@@ -336,7 +336,7 @@ export function TaskCard({ id, priority, assignee }) {
   const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
   const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
 
-  function priorityAction(e: React.MouseEvent) {
+  function handlePriority(e: React.MouseEvent) {
     e.stopPropagation();
     startTransition(async () => {
       setOptimisticPriority(current => PRIORITY_CYCLE[current]);
@@ -344,7 +344,7 @@ export function TaskCard({ id, priority, assignee }) {
     });
   }
 
-  function assigneeAction(e: React.MouseEvent) {
+  function handleAssignee(e: React.MouseEvent) {
     e.stopPropagation();
     startTransition(async () => {
       setOptimisticAssignee(nextAssignee);

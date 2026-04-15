@@ -1,6 +1,6 @@
 ---
 name: vercel-async-react
-description: Guide for fixing common React UX issues — frozen UI during submissions, missing loading states, stale data after navigation, optimistic updates that don't revert on failure, flickering between states, and uncoordinated mutations. Applies React's async primitives (useOptimistic, useTransition, useActionState, Suspense, useDeferredValue, form actions, action props) to replace useState/useEffect fetch patterns, onClick-based mutations, and manual loading state management. Use this skill when the user reports UI freezing on click, no feedback during async work, data out of sync after navigating, layout shift on load, search/filter feeling sluggish, or wants to add optimistic updates, pending indicators, loading skeletons, or instant-feeling interactions. Also use when the user mentions useOptimistic, useTransition, useActionState, startTransition, Suspense, useDeferredValue, action props, data-pending, form actions, or asks about handling async in-between states in React.
+description: Fix React UX issues (frozen UI, missing loading states, stale data, uncoordinated mutations) using async primitives (useOptimistic, useTransition, useActionState, Suspense, useDeferredValue, form actions, action props). Replaces useState/useEffect fetch patterns, onClick mutations, and manual loading management. Use when the user reports UI freezing, no async feedback, data out of sync after navigation, layout shift on load, sluggish search/filter, or wants optimistic updates, pending indicators, loading skeletons, or instant-feeling interactions. Also use when mentioning useOptimistic, useTransition, useActionState, startTransition, Suspense, useDeferredValue, action props, data-pending, or async in-between states.
 license: MIT
 metadata:
   author: vercel
@@ -8,6 +8,8 @@ metadata:
 ---
 
 # Async React
+
+Use this skill when adding optimistic updates, loading states, pending indicators, or async coordination to a React app — or when fixing frozen UI, stale data, and uncoordinated mutations.
 
 Coordinate async UI states using React's built-in primitives. The core idea: wrap async work in **transitions**, and React tracks pending state, batches updates, and coordinates everything — loading, mutations, navigation — through a single pipeline. No competing state layers, no race conditions.
 

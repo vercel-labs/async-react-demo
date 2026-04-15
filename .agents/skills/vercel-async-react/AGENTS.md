@@ -6,6 +6,8 @@ April 2026
 
 ---
 
+Use this skill when adding optimistic updates, loading states, pending indicators, or async coordination to a React app — or when fixing frozen UI, stale data, and uncoordinated mutations.
+
 Coordinate async UI states using React's built-in primitives. The core idea: wrap async work in **transitions**, and React tracks pending state, batches updates, and coordinates everything — loading, mutations, navigation — through a single pipeline. No competing state layers, no race conditions.
 
 This is the combination of React 18's concurrent features and React 19's coordination APIs. The React team calls this "Async React" — a complete system for building responsive async applications through composable primitives. Based on [Ricky Hanlon's React Conf 2025 demo](https://github.com/rickhanlonii/async-react), the vision is that product code becomes simple and declarative because three infrastructure layers handle async coordination internally:
@@ -732,7 +734,7 @@ export function TaskCard({ id, priority, assignee }) {
   const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
   const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
 
-  function priorityAction(e: React.MouseEvent) {
+  function handlePriority(e: React.MouseEvent) {
     e.stopPropagation();
     startTransition(async () => {
       setOptimisticPriority(current => PRIORITY_CYCLE[current]);
@@ -740,7 +742,7 @@ export function TaskCard({ id, priority, assignee }) {
     });
   }
 
-  function assigneeAction(e: React.MouseEvent) {
+  function handleAssignee(e: React.MouseEvent) {
     e.stopPropagation();
     startTransition(async () => {
       setOptimisticAssignee(nextAssignee);
