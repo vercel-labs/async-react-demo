@@ -7,8 +7,7 @@ import { AssigneeSelect } from "./_components/assignee-select";
 import { PriorityButton } from "./_components/priority-button";
 import { CommentList } from "./_components/comment-list";
 import { cn, timeAgo } from "@/lib/utils";
-
-const labelStyle = "bg-white/[0.06] text-white/50";
+import { labelColor } from "@/lib/label-colors";
 
 export default async function TaskPage({
   params,
@@ -38,7 +37,7 @@ export default async function TaskPage({
                 key={l}
                 className={cn(
                   "rounded-full px-2 py-0.5 font-mono text-[10px]",
-                  labelStyle
+                  labelColor[l]
                 )}
               >
                 {l}
