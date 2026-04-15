@@ -3,9 +3,8 @@ import { StatusSelect } from "./status-select";
 import { AssigneeSelect } from "./assignee-select";
 import { PriorityButton } from "./priority-button";
 import { cn, timeAgo } from "@/lib/utils";
+import { labelColor } from "@/lib/label-colors";
 import type { Task } from "@/lib/data";
-
-const labelStyle = "bg-white/[0.06] text-white/50";
 
 export async function TaskDetail({
   taskPromise,
@@ -25,7 +24,7 @@ export async function TaskDetail({
               key={l}
               className={cn(
                 "rounded-full px-2 py-0.5 font-mono text-[10px]",
-                labelStyle
+                labelColor[l]
               )}
             >
               {l}

@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { cyclePriority, reassignTask } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, PRIORITY_CYCLE, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
+import { labelColor } from "@/lib/label-colors";
 
 const priorityDot: Record<Priority, string> = {
-  high: "bg-white/70",
-  medium: "bg-white/35",
-  low: "bg-white/15",
+  high: "bg-red-400/80",
+  medium: "bg-amber-400/60",
+  low: "bg-blue-400/35",
 };
 
 export function TaskCard({
@@ -83,7 +84,10 @@ export function TaskCard({
           {labels.slice(0, 2).map((l) => (
             <span
               key={l}
-              className="rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] text-white/40"
+              className={cn(
+                "rounded-full px-2 py-0.5 font-mono text-[10px]",
+                labelColor[l]
+              )}
             >
               {l}
             </span>
