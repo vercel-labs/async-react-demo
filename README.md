@@ -1,8 +1,10 @@
 # Async React Demo
 
-A Next.js task board app demonstrating async coordination patterns — optimistic updates, Suspense boundaries, form actions, action props, and pending states. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/async-react).
+A Next.js task board showcasing Async React patterns — useOptimistic, Suspense boundaries, action props, form actions, and more. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/async-react).
 
-The `[main](#)` branch has all async coordination patterns applied; the `[plain](#)` branch is the base app with legacy patterns and no feedback.
+The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch has all async coordination patterns applied; the [`plain`](https://github.com/vercel-labs/async-react-demo/tree/plain) branch is the base app with legacy patterns and no feedback.
+
+**[Live Demo](https://async-react-demo.labs.vercel.dev/)**
 
 ## App Features
 
