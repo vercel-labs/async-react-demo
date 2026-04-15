@@ -1,35 +1,32 @@
 "use client";
 
-import { startTransition, useOptimistic } from "react";
+import { use, useOptimistic } from "react";
 import { CommentForm } from "./comment-form";
 import { DeleteButton } from "./delete-button";
+import { deleteComment } from "@/lib/actions";
 import { timeAgo } from "@/lib/utils";
-import { addComment, deleteComment } from "@/lib/actions";
+import type { Comment } from "@/lib/data";
+import type { commentsFromTask } from "@/lib/queries";
 
-type SerializedComment = {
-  id: string;
-  taskId: string;
-  userName: string;
-  content: string;
-  createdAt: string;
-};
+type SerializedComment = Omit<Comment, "createdAt"> & { createdAt: string };
 
 export function CommentList({
-  taskId,
-  comments,
+  commentsPromise,
   userName,
 }: {
-  taskId: string;
-  comments: SerializedComment[];
+  commentsPromise: ReturnType<typeof commentsFromTask>;
   userName: string;
 }) {
-  const [optimisticComments, dispatch] = useOptimistic(
+  const data = use(commentsPromise);
+  if (!data) return null;
+
+  const { taskId, comments } = data;
+
+  const [optimisticComments, updateComments] = useOptimistic(
     comments,
     (
-      state,
-      action:
-        | { type: "add"; comment: SerializedComment }
-        | { type: "delete"; id: string },
+      state: SerializedComment[],
+      action: { type: "add"; comment: SerializedComment } | { type: "delete"; id: string }
     ) => {
       if (action.type === "add") {
         if (state.some((c) => c.id === action.comment.id)) return state;
@@ -37,34 +34,12 @@ export function CommentList({
       }
       if (action.type === "delete") {
         return state.map((c) =>
-          c.id === action.id ? { ...c, deleting: true } : c,
-        );
+          c.id === action.id ? { ...c, deleting: true } : c
+        ) as (SerializedComment & { deleting?: boolean })[];
       }
       return state;
-    },
+    }
   );
-
-  async function handleAddAction(content: string) {
-    const tempId = crypto.randomUUID();
-    dispatch({
-      type: "add",
-      comment: {
-        id: tempId,
-        taskId,
-        userName,
-        content,
-        createdAt: new Date().toISOString(),
-      },
-    });
-    await addComment(taskId, content);
-  }
-
-  function handleDeleteAction(commentId: string) {
-    startTransition(async () => {
-      dispatch({ type: "delete", id: commentId });
-      await deleteComment(commentId);
-    });
-  }
 
   return (
     <div>
@@ -78,50 +53,84 @@ export function CommentList({
       </h3>
 
       <div className="mb-5">
-        <CommentForm addAction={handleAddAction} />
+        <CommentForm
+          taskId={taskId}
+          addCommentAction={(comment) =>
+            updateComments({ type: "add", comment })
+          }
+        />
       </div>
 
       <div className="space-y-1">
-        {optimisticComments.map((comment) => (
-          <div
-            key={comment.id}
-            className="group/comment rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.02] has-data-pending:opacity-50"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2.5">
-                <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] font-mono text-[9px] text-white/50">
-                  {comment.userName[0]}
-                </div>
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[13px] font-medium text-white/85">
-                      {comment.userName}
-                    </span>
-                    <span className="font-mono text-[10px] text-white/30">
-                      {timeAgo(new Date(comment.createdAt))}
-                    </span>
+        {optimisticComments.map((comment) => {
+          const isDeleting = "deleting" in comment && comment.deleting;
+          return (
+            <div
+              key={comment.id}
+              className={`group/comment rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.02] ${
+                isDeleting ? "opacity-30" : ""
+              } ${"pending" in comment && comment.pending ? "animate-pulse" : ""}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2.5">
+                  <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] font-mono text-[9px] text-white/50">
+                    {comment.userName[0]}
                   </div>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-white/65">
-                    {comment.content}
-                  </p>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[13px] font-medium text-white/70">
+                        {comment.userName}
+                      </span>
+                      <span className="font-mono text-[10px] text-white/20">
+                        {timeAgo(new Date(comment.createdAt))}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-white/50">
+                      {comment.content}
+                    </p>
+                  </div>
                 </div>
+                {comment.userName === userName && !isDeleting && (
+                  <div className="opacity-0 transition-opacity group-hover/comment:opacity-100">
+                    <DeleteButton
+                      deleteAction={async () => {
+                        updateComments({ type: "delete", id: comment.id });
+                        await deleteComment(comment.id);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-              {comment.userName === userName && (
-                <div className="opacity-0 transition-opacity group-hover/comment:opacity-100">
-                  <DeleteButton
-                    deleteAction={() => handleDeleteAction(comment.id)}
-                  />
-                </div>
-              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {optimisticComments.length === 0 && (
           <p className="py-10 text-center text-[13px] text-white/20">
             No comments yet
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+export function CommentListSkeleton() {
+  return (
+    <div>
+      <h3 className="mb-4 text-[13px] font-medium text-white/60">
+        Discussion
+      </h3>
+      <div className="mb-5">
+        <div className="h-[42px] rounded-lg border border-white/[0.06] bg-white/[0.02]" />
+      </div>
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-14 animate-pulse rounded-lg bg-white/[0.03]"
+          />
+        ))}
       </div>
     </div>
   );

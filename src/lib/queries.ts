@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { comments, tasks, type Label, type Status } from "./data";
+import { comments, tasks, type Label, type Status, type Task } from "./data";
 import { delay } from "./utils";
 
 const DEFAULT_USER = "You";
@@ -30,6 +30,19 @@ export const getTask = cache(async (id: string) => {
   await delay(300);
   return tasks.find((t) => t.id === id) ?? null;
 });
+
+export async function commentsFromTask(taskPromise: Promise<Task | null>) {
+  const task = await taskPromise;
+  if (!task) return null;
+  const taskComments = await getComments(task.id);
+  return {
+    taskId: task.id,
+    comments: taskComments.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+    })),
+  };
+}
 
 export const getComments = cache(async (taskId: string) => {
   await delay(350);

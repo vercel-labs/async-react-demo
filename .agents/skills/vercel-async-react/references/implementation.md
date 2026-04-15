@@ -17,18 +17,22 @@ Before writing any code, scan the codebase and classify every async interaction.
 
 ```
 grep -r "useState.*useEffect" --include="*.tsx"   # Legacy fetch patterns
+grep -r "useState.*initial\|useState.*prop" --include="*.tsx"  # useState(prop) → useOptimistic(prop)
 grep -r "onClick.*await" --include="*.tsx"         # Async onClick handlers → form actions
 grep -r "router\.refresh" --include="*.tsx"        # Client-side invalidation → move server-side
 grep -r "/api/" --include="*.tsx"                  # API routes that might be unnecessary
 grep -r "onChange" --include="*.tsx"                # Design components missing action props
 grep -r "window\.location" --include="*.tsx"       # Hard refreshes → router.refresh or refresh()
+grep -r "handleAction\|handle.*Action" --include="*.tsx"  # Wrong naming — use Action suffix without handle
 ```
 
 **Look for legacy patterns to fix:**
 
 - **Every `useState` + `useEffect` pair** — Client-side data fetching that should be server data passed as props. This is the #1 source of coordination bugs: mutations and navigation don't talk to each other because state lives in two places.
+- **Every `useState(prop)` / `useState(initialProp)`** — Components receiving server data as a prop and storing it in `useState`. After `refresh()` delivers fresh data, `useState` ignores the new prop value. Replace with `useOptimistic(prop)` which re-evaluates every render.
 - **Every `onClick` that calls an async function** — Should be a form `action` (gets transition wrapping for free) or wrapped in `startTransition`.
 - **Every API route created just for client-side fetching** — Often a sign of the `useEffect` anti-pattern. The data should come from the server component and flow as props.
+- **Every `handleFooAction` function name** — `handle` prefix and `Action` suffix should not be combined. `handle` is for direct event handlers (`handleClick`, `handleDragStart`); `Action` suffix replaces it (`filterAction`, `deleteAction`).
 
 **Look for missing coordination:**
 
@@ -87,6 +91,13 @@ For every `useState` + `useEffect` pair that fetches server-derived data:
 6. **Ensure the server action invalidates** — call `updateTag()` or `refresh()` after mutating data. See `nextjs.md`.
 7. **Remove `key` props used to force remounts on data changes** — `useOptimistic` tracks the base value automatically; `key`-based remounting is only needed for `useState`.
 
+For every `useState(prop)` / `useState(initialProp)` that stores server-derived data:
+
+1. Replace `useState(prop)` with `useOptimistic(prop)` — this ensures the component tracks server updates after `refresh()`
+2. Replace the `setState` calls with the optimistic setter inside `startTransition` or a form `action`
+3. For relative updates (cycling, incrementing), use an updater function: `setOptimistic(current => next(current))`
+4. Remove any `useEffect` syncing props to state — `useOptimistic` handles this automatically
+
 **Before (broken coordination):**
 ```tsx
 const [isFavorited, setIsFavorited] = useState(false);
@@ -129,7 +140,9 @@ For every mutation where the user expects instant feedback, apply the appropriat
 **Rules:**
 
 - The setter must be called inside an Action (`startTransition` or form `action`).
-- Use reducers (not updaters) when the base state might change during the Action.
+- Use **updater functions** (`setOptimistic(current => ...)`) for relative updates (cycling, incrementing, toggling) — prevents stale closures on rapid interactions.
+- Use **reducers** (not updaters) when the base state might change during the Action (e.g., from polling), or when handling multiple action types.
+- A component can have **multiple `useOptimistic` calls** for independent values.
 - Pair rollback with user-visible feedback (`toast.error()` or error boundary).
 - For list adds, generate a UUID on the client and pass it to the server.
 - Every server action that mutates data must call `updateTag()` or `refresh()`.
@@ -166,5 +179,8 @@ Walk through every row in the interaction map from Step 1:
 - Do mutations survive navigation? (Toggle, then switch tabs — no stale data)
 - Does background refresh coordinate with user actions? (Action mid-poll — no clobber)
 - Does every server action call `updateTag()` or `refresh()`?
+- Are all server-derived values using `useOptimistic(prop)`, not `useState(prop)`?
+- Are Action-suffixed functions named without `handle` prefix?
+- Do relative updates use updater functions (`current => ...`)?
 - Do errors surface correctly? (Unexpected → error boundary, expected → toast)
 - Are state changes animated? (See the `vercel-react-view-transitions` skill for page transitions, enter/exit, and shared element animations)

@@ -1,13 +1,12 @@
 "use client";
 
 import { startTransition, useOptimistic, useState } from "react";
-import { toast } from "sonner";
 import { updateStatus } from "@/lib/actions";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
 import type { Assignee, Label, Priority, Status } from "@/lib/data";
 
-export type SerializedTask = {
+type SerializedTask = {
   id: string;
   title: string;
   description: string;
@@ -25,32 +24,31 @@ const columns: { status: Status; title: string }[] = [
 ];
 
 export function BoardClient({
-  initialTasks,
+  tasks,
 }: {
-  initialTasks: SerializedTask[];
+  tasks: SerializedTask[];
 }) {
   const [optimisticTasks, moveTask] = useOptimistic(
-    initialTasks,
-    (state, { id, newStatus }: { id: string; newStatus: Status }) =>
-      state.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
+    tasks,
+    (currentTasks, action: { taskId: string; status: Status }) =>
+      currentTasks.map((t) =>
+        t.id === action.taskId ? { ...t, status: action.status } : t
+      )
   );
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
 
   function handleDrop(targetStatus: Status, taskId: string) {
     startTransition(async () => {
-      moveTask({ id: taskId, newStatus: targetStatus });
-      const result = await updateStatus(taskId, targetStatus);
-      if ("error" in result) toast.error(result.error);
+      moveTask({ taskId, status: targetStatus });
+      setDragOverColumn(null);
+      await updateStatus(taskId, targetStatus);
     });
-    setDragOverColumn(null);
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {columns.map((col) => {
-        const columnTasks = optimisticTasks.filter(
-          (t) => t.status === col.status
-        );
+        const columnTasks = optimisticTasks.filter((t) => t.status === col.status);
 
         return (
           <div

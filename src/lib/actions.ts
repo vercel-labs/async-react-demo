@@ -13,7 +13,6 @@ import {
   type Label,
   type Priority,
   type Status,
-  type Task,
 } from "./data";
 import { delay } from "./utils";
 
@@ -33,16 +32,13 @@ export async function cyclePriority(
 export async function updateStatus(
   taskId: string,
   newStatus: Status
-): Promise<{ error: string } | { status: Status }> {
+): Promise<Status | null> {
   await delay(500);
-  if (Math.random() < 0.3) {
-    return { error: "Failed to update status — server error" };
-  }
   const task = tasks.find((t) => t.id === taskId);
-  if (!task) return { error: "Task not found" };
+  if (!task) return null;
   task.status = newStatus;
   refresh();
-  return { status: task.status };
+  return task.status;
 }
 
 export async function reassignTask(
@@ -58,33 +54,28 @@ export async function reassignTask(
   return task.assignee;
 }
 
-export async function createTask(newTask: {
+export async function createTask(data: {
   title: string;
   description: string;
   status: Status;
   priority: Priority;
   assignee: string;
   labels: Label[];
-}): Promise<Task> {
-  await delay(800);
-  if (!newTask.title?.trim()) {
-    throw new Error("Title is required");
-  }
-
-  const task: Task = {
+}) {
+  await delay(600);
+  const task = {
     id: getNextTaskId(),
-    title: newTask.title.trim(),
-    description: newTask.description?.trim() ?? "",
-    status: newTask.status ?? "todo",
-    priority: newTask.priority ?? "medium",
-    labels: newTask.labels ?? [],
-    assignee: (ASSIGNEES.includes(newTask.assignee as Assignee)
-      ? newTask.assignee
-      : "Sarah") as Assignee,
+    title: data.title,
+    description: data.description || "",
+    status: data.status,
+    priority: data.priority,
+    labels: data.labels,
+    assignee: (ASSIGNEES.includes(data.assignee as Assignee)
+      ? data.assignee
+      : ASSIGNEES[0]) as Assignee,
     createdAt: new Date(),
   };
-
-  tasks.push(task);
+  tasks.unshift(task);
   refresh();
   return task;
 }

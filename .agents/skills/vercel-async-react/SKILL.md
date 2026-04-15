@@ -73,17 +73,27 @@ When adding async coordination to an existing app, **follow `references/implemen
 
 ### Transitions (Actions)
 
-Any function run inside `startTransition` is called an **Action**. React tracks `isPending` automatically. By convention, callbacks are named with "Action" (e.g., `submitAction`, `deleteAction`). The transition keeps the current UI visible and interactive until the action completes. Multiple updates inside a transition commit together — no intermediate flickers. Errors thrown inside transitions bubble to error boundaries.
+Any function run inside `startTransition` is called an **Action**. React tracks `isPending` automatically. The transition keeps the current UI visible and interactive until the action completes. Multiple updates inside a transition commit together — no intermediate flickers. Errors thrown inside transitions bubble to error boundaries.
+
+**Naming convention:** Suffix callback props and functions with "Action" (e.g., `submitAction`, `deleteAction`, `filterAction`) to signal they run inside a transition. Do **not** combine `handle` with `Action` — `handle` is reserved for direct event handlers (e.g., `handleClick`, `handleDragStart`). An `Action`-suffixed function wraps async work in a transition; a `handle`-prefixed function responds to a DOM event directly.
 
 ### Optimistic Updates
 
 `useOptimistic` shows instant updates while an Action runs in the background. Unlike `useState` (which defers updates inside transitions), `useOptimistic` updates **immediately**. The optimistic value persists while the Action is pending, then settles to the source of truth (props or state) when the transition completes. On failure, it automatically reverts. The setter must be called inside an Action (`startTransition` or form `action`).
 
-The reducer form handles complex state (increment, add to list, multi-field). Reducers are essential when the base state might change during your Action (e.g., from polling) — React re-runs the reducer with the updated base value.
+**Why `useOptimistic`, not `useState`, for server-derived data:** `useOptimistic(value)` re-evaluates `value` every render — when the server sends fresh data (via `refresh()`), the component automatically shows it. `useState(initialValue)` only reads the initial value on mount and ignores subsequent prop changes. This is the most common coordination bug: `useState(prop)` works on first render, but after a server refresh the component shows stale data. Always use `useOptimistic(prop)` for server-derived values that the user can mutate. You can have **multiple `useOptimistic` calls** in one component for independent values (e.g., priority and assignee on a card).
+
+**Updater functions:** Pass a function to the setter for state-relative updates: `setOptimistic(current => PRIORITY_CYCLE[current])`. This is essential when rapid interactions queue multiple transitions — each updater computes from the latest optimistic state, not a stale closure. Without an updater, rapid clicks can compute the wrong next value.
+
+**Reducers:** Handle complex state (increment, add to list, multi-field, multi-action types). Reducers are essential when the base state might change during your Action (e.g., from polling) — React re-runs the reducer with the updated base value. Use reducers when you need to pass data to the update or handle multiple action types with a single hook.
+
+**Choosing between updaters and reducers:**
+- **Updater** (`setOptimistic(current => ...)`) — For single-value calculations where the setter naturally describes the update. Similar to `setState(prev => ...)`.
+- **Reducer** (`useOptimistic(value, (current, action) => ...)`) — When you need to pass data to the update (which item to add/remove), handle multiple action types, or when the base state might change during pending actions.
 
 `useOptimistic(false)` can also serve as a **pending indicator** — showing "Submitting..." without `useTransition`. Alternatively, derive `isPending` by comparing the optimistic value to the server value: `const isPending = optimisticValue !== serverValue`.
 
-See `references/patterns.md` for toggle, reducer, list add, delete, move, and pending indicator examples.
+See `references/patterns.md` for toggle, reducer, updater, list add, delete, move, multi-value, and pending indicator examples.
 
 ### Suspense Boundaries
 
@@ -173,9 +183,12 @@ For animating between these states — page transitions, enter/exit animations, 
 - **Skipping the audit** — Without classifying interactions first, you'll miss coordination gaps or apply the wrong pattern. See `references/implementation.md` Step 1.
 - **Forgetting to invalidate after mutations** — `useOptimistic` shows the instant result, the server action succeeds, but without `updateTag()` or `refresh()`, the server never re-renders. The optimistic value settles to stale data. Every server action that mutates data must invalidate. See `references/nextjs.md`.
 - **`useState` + `useEffect` for server-derived state** — Creates the coordination problem. Fetch state client-side, manage it locally, and now mutations and navigation don't talk to each other. Fix: server data as props, `useOptimistic` for instant feedback.
+- **`useState(prop)` instead of `useOptimistic(prop)`** — `useState` only reads the initial value on mount. After `refresh()` delivers fresh server data, the prop updates but `useState` ignores it — the component shows stale values. `useOptimistic(prop)` re-evaluates every render, automatically tracking server updates. This is the most common subtle bug: the component works on first render but goes stale after mutations.
 - **`onClick` instead of form `action`** — Form actions get transition wrapping for free. Use `<form action={...}>` for mutations.
 - **Calling `useOptimistic` setter outside an Action** — The setter must be called inside `startTransition` or a form `action`. Outside, React warns and the optimistic value briefly renders then reverts.
+- **Reading optimistic value in setter instead of using updater** — `setOptimistic(CYCLE[optimisticValue])` captures a stale closure if rapid clicks queue multiple transitions. Use an updater: `setOptimistic(current => CYCLE[current])`.
 - **Competing data layers** — Don't mix `useOptimistic` with separate `useState` for the same data. One source of truth (server props), one overlay (`useOptimistic`).
+- **`handleFooAction` naming** — Don't combine `handle` prefix with `Action` suffix. `handle` is for direct event handlers (`handleClick`); `Action` suffix replaces it (`filterAction`, `deleteAction`).
 - **Wrong boundary structure** — One big `<Suspense>` means nothing renders until everything loads. But blindly splitting into siblings can cause layout shift (CLS) if a component above has unknown height. Choose boundaries based on the loading state you want for the page.
 - **Using updater instead of reducer when base state can change** — If the base data might change during your Action (e.g., from polling), use a reducer. Updaters only see state from when the transition started; reducers re-run with the latest base value.
 - **Raw `await` on server actions bypasses error boundaries** — `await serverAction()` inside an `onClick` handler is not in a transition. Errors are unhandled. Wrap in `startTransition` or use form `action`.

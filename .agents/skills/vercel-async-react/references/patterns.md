@@ -300,6 +300,84 @@ export function LikeButton({ isLiked, toggleAction }) {
 
 No `startTransition` needed — form `action` already wraps in a transition. The setter is called inside an Action prop.
 
+### Updater Function (Cycle / Relative)
+
+When computing the next value from the current value, use an updater function instead of reading from the optimistic variable. This prevents stale closures when rapid interactions queue multiple transitions:
+
+```tsx
+'use client';
+
+import { useOptimistic } from 'react';
+import { PRIORITY_CYCLE } from '@/lib/data';
+
+export function PriorityButton({ taskId, priority }) {
+  const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
+
+  return (
+    <form action={async () => {
+      // ✅ Updater — computes from latest optimistic state
+      setOptimisticPriority(current => PRIORITY_CYCLE[current]);
+      await cyclePriority(taskId);
+    }}>
+      <button type="submit">{optimisticPriority}</button>
+    </form>
+  );
+}
+```
+
+**Why not `setOptimisticPriority(PRIORITY_CYCLE[optimisticPriority])`?** If the user clicks twice rapidly, both calls read the same `optimisticPriority` from the closure. Updater functions queue and each computes from the result of the previous one.
+
+### Multiple Optimistic Values
+
+A single component can have multiple independent `useOptimistic` calls. Each tracks its own server prop:
+
+```tsx
+export function TaskCard({ id, priority, assignee }) {
+  const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
+  const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
+
+  function priorityAction(e: React.MouseEvent) {
+    e.stopPropagation();
+    startTransition(async () => {
+      setOptimisticPriority(current => PRIORITY_CYCLE[current]);
+      await cyclePriority(id);
+    });
+  }
+
+  function assigneeAction(e: React.MouseEvent) {
+    e.stopPropagation();
+    startTransition(async () => {
+      setOptimisticAssignee(nextAssignee);
+      await reassignTask(id, nextAssignee);
+    });
+  }
+
+  // Render with optimisticPriority and optimisticAssignee
+}
+```
+
+Each optimistic value settles independently when its transition completes. Both track fresh server data after `refresh()`.
+
+### `useState(prop)` Anti-Pattern
+
+`useState(initialValue)` only reads the initial value on mount. After `refresh()` delivers new server data, the prop updates but `useState` ignores it:
+
+```tsx
+// ❌ Stale after refresh — useState ignores prop updates
+function Card({ priority: initialPriority }) {
+  const [priority, setPriority] = useState(initialPriority);
+  // After refresh(), initialPriority changes but priority stays stale
+}
+
+// ✅ Tracks server data — useOptimistic re-evaluates every render
+function Card({ priority }) {
+  const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
+  // After refresh(), priority changes and optimisticPriority follows
+}
+```
+
+This distinction is critical for drag-and-drop boards, Kanban columns, and any component that receives server-derived props and supports mutations. `useState` creates an island of stale data; `useOptimistic` stays in sync with the server.
+
 ### Multi-Value (Reducer)
 
 When an optimistic update affects multiple related values, use a reducer:
@@ -313,7 +391,7 @@ const [optimistic, dispatch] = useOptimistic(
   })
 );
 
-function handleClick() {
+function toggleAction() {
   startTransition(async () => {
     dispatch(!optimistic.isFollowing);
     await followAction(!optimistic.isFollowing);
@@ -350,7 +428,7 @@ const [optimisticItems, removeItem] = useOptimistic(
     )
 );
 
-function handleDelete(id) {
+function deleteItemAction(id) {
   startTransition(async () => {
     removeItem(id);
     try {
@@ -375,7 +453,7 @@ const [optimisticItems, moveItem] = useOptimistic(
     state.map(item => item.id === id ? { ...item, status: newStatus } : item)
 );
 
-function handleMove(id: string, newStatus: Status) {
+function moveAction(id: string, newStatus: Status) {
   startTransition(async () => {
     moveItem({ id, newStatus });
     await updateStatus(id, newStatus);
@@ -609,7 +687,7 @@ export function CreateForm({ onSuccess }: { onSuccess?: () => void }) {
 const [state, dispatchAction, isPending] = useActionState(updateAction, { count: 0 });
 const [optimisticCount, setOptimisticCount] = useOptimistic(state.count);
 
-function handleAdd() {
+function addAction() {
   startTransition(() => {
     setOptimisticCount(c => c + 1);
     dispatchAction({ type: 'ADD' });

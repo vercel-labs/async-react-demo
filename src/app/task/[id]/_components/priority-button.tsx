@@ -27,7 +27,7 @@ export function PriorityButton({
   return (
     <form
       action={async () => {
-        setOptimisticPriority(PRIORITY_CYCLE[optimisticPriority]);
+        setOptimisticPriority((current) => PRIORITY_CYCLE[current]);
         await cyclePriority(taskId);
       }}
     >

@@ -14,7 +14,7 @@ export function AssigneeSelect({
 }) {
   const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
 
-  function handleAssignAction(newAssignee: Assignee) {
+  function handleAssign(newAssignee: Assignee) {
     if (newAssignee === optimisticAssignee) return;
     startTransition(async () => {
       setOptimisticAssignee(newAssignee);
@@ -27,7 +27,7 @@ export function AssigneeSelect({
       {ASSIGNEES.map((name) => (
         <button
           key={name}
-          onClick={() => handleAssignAction(name)}
+          onClick={() => handleAssign(name)}
           className={cn(
             "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
             optimisticAssignee === name

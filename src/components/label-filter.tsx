@@ -17,7 +17,7 @@ export function LabelFilter() {
   const searchParams = useSearchParams();
   const current = searchParams.get("label") ?? null;
 
-  function handleFilterAction(value: string | null) {
+  function filterAction(value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
       params.set("label", value);
@@ -31,7 +31,7 @@ export function LabelFilter() {
     <ChipGroup
       items={labels}
       value={current}
-      changeAction={handleFilterAction}
+      changeAction={filterAction}
     />
   );
 }

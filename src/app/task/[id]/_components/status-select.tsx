@@ -20,7 +20,7 @@ export function StatusSelect({
 }) {
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(status);
 
-  function handleStatusAction(newStatus: Status) {
+  function handleStatus(newStatus: Status) {
     if (newStatus === optimisticStatus) return;
     startTransition(async () => {
       setOptimisticStatus(newStatus);
@@ -33,7 +33,7 @@ export function StatusSelect({
       {statuses.map((s) => (
         <button
           key={s.value}
-          onClick={() => handleStatusAction(s.value)}
+          onClick={() => handleStatus(s.value)}
           className={cn(
             "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
             optimisticStatus === s.value
