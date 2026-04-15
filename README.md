@@ -1,6 +1,6 @@
 # Async React Demo
 
-A Next.js task board showcasing Async React patterns — useOptimistic, Suspense boundaries, action props, form actions, and more. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/async-react).
+A Next.js task board showcasing Async React patterns — useOptimistic, Suspense boundaries, action props, form actions, and more. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/agent-skills/tree/main/skills/async-react).
 
 The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch has all async coordination patterns applied; the [`plain`](https://github.com/vercel-labs/async-react-demo/tree/plain) branch is the base app with legacy patterns and no feedback.
 
@@ -40,7 +40,7 @@ The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch h
 Install the skill and prompt your agent against the `plain` branch:
 
 ```bash
-npx skills add https://github.com/vercel-labs/async-react
+npx skills add https://github.com/vercel-labs/agent-skills --skill async-react
 ```
 
 ```
