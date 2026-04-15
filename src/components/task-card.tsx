@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import { ASSIGNEES, PRIORITY_CYCLE, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
 
 const priorityDot: Record<Priority, string> = {
-  high: "bg-white/70",
-  medium: "bg-white/35",
+  high: "bg-red-400/50",
+  medium: "bg-amber-300/30",
   low: "bg-white/15",
 };
 
