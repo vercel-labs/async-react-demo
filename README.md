@@ -1,6 +1,6 @@
 # Async React Demo
 
-A Next.js task board showcasing Async React patterns — useOptimistic, Suspense boundaries, action props, form actions, and more. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/agent-skills/tree/main/skills/async-react).
+A Next.js task board for testing the [Async React agent skill](https://github.com/vercel-labs/agent-skills/tree/main/skills/async-react) — an audit and review tool that scans for async coordination issues and suggests fixes using React 19's primitives.
 
 The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch has all async coordination patterns applied; the [`plain`](https://github.com/vercel-labs/async-react-demo/tree/plain) branch is the base app with legacy patterns and no feedback.
 
@@ -37,22 +37,23 @@ The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch h
 
 ## Try It
 
-Install the skill and prompt your agent against the `plain` branch:
+Install the skill and point your agent at the `plain` branch:
 
 ```bash
-npx skills add https://github.com/vercel-labs/agent-skills --skill async-react
+npx skills add vercel-labs/agent-skills --skill async-react
 ```
 
 ```
-Add async coordination to this app using the vercel-async-react skill
+Review the async patterns in this app using the async-react skill. What coordination issues do you see?
 ```
 
-Output is not deterministic — the agent may not cover every interaction in one pass. Review what it did, then ask for what's missing:
+The skill will audit the codebase, produce an interaction map, and ask what you want to prioritize. You drive the conversation:
 
 ```
-The comments still use useEffect for fetching. Convert CommentList to a server component
-with Suspense, and add optimistic add/delete.
+Fix the FavoriteButton and the comment list first. Leave the drag-and-drop for now.
 ```
+
+After it implements your picks, it walks through the changes with you to verify everything coordinates correctly.
 
 ## Setup
 
