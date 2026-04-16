@@ -88,7 +88,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(1 0 0 / 25%);
 }
-
-::view-transition-group(site-header) {
-  animation: none;
-}
