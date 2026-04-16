@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full bg-black/80 backdrop-blur-xl supports-[backdrop-filter]:bg-black/60">
+    <header className="sticky top-0 z-50 w-full bg-black/80 backdrop-blur-xl supports-[backdrop-filter]:bg-black/60" style={{ viewTransitionName: 'site-header' }}>
       <div className="mx-auto flex h-14 max-w-6xl items-center px-4 sm:px-6">
         <Link
           href="/"
