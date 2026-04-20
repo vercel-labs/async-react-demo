@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { addComment } from "@/lib/actions";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function CommentForm({
   taskId,
@@ -25,7 +27,7 @@ export function CommentForm({
 
   return (
     <div className="relative">
-      <input
+      <Input
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onKeyDown={(e) => {
@@ -35,16 +37,18 @@ export function CommentForm({
           }
         }}
         placeholder="Write a comment..."
-        className="w-full rounded-lg border border-white/[0.06] bg-white/[0.02] py-2.5 pl-4 pr-10 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.12] focus:outline-none"
+        className="pr-10"
         disabled={isSubmitting}
       />
-      <button
+      <Button
         onClick={handleSubmit}
         disabled={!content.trim() || isSubmitting}
-        className="absolute right-2 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md bg-white/[0.08] text-white/50 transition-colors hover:bg-white/[0.12] hover:text-white/70 disabled:opacity-0"
+        variant="ghost"
+        size="icon-xs"
+        className="absolute right-1.5 top-1/2 -translate-y-1/2"
       >
         <ArrowUp className="size-3.5" />
-      </button>
+      </Button>
     </div>
   );
 }
