@@ -10,7 +10,7 @@ type CommentCardProps = {
     createdAt: Date | string;
   };
   pending?: boolean;
-  deleteAction?: (commentId: string) => Promise<void>;
+  deleteAction?: () => Promise<void>;
 };
 
 export function CommentCard({
@@ -55,9 +55,7 @@ export function CommentCard({
         </div>
         {deleteAction && (
           <div className="opacity-0 transition-opacity group-hover/comment:opacity-100">
-            <DeleteButton
-              deleteAction={() => deleteAction(comment.id)}
-            />
+            <DeleteButton deleteAction={deleteAction} />
           </div>
         )}
       </div>
