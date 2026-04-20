@@ -40,9 +40,8 @@ export function TaskCard({
 
   function handleAssignee(e: React.MouseEvent) {
     e.stopPropagation();
-    const currentIdx = ASSIGNEES.indexOf(optimisticAssignee);
-    const nextAssignee = ASSIGNEES[(currentIdx + 1) % ASSIGNEES.length];
     startTransition(async () => {
+      const nextAssignee = ASSIGNEES[(ASSIGNEES.indexOf(optimisticAssignee) + 1) % ASSIGNEES.length];
       setOptimisticAssignee(nextAssignee);
       await reassignTask(id, nextAssignee);
     });
