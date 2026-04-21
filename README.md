@@ -22,17 +22,18 @@ The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch h
 
 | Where              | What's broken                                                                            | Async React fix                                                                   |
 | ------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Board              | No `<Suspense>`, page blocks until all columns load                                      | `<Suspense>` boundaries with skeleton fallbacks                                   |
-| Drag-and-drop      | `useState` optimistic that never reverts on failure, raw `await` bypasses error boundary | `useOptimistic` (auto-reverts) + `startTransition` (errors bubble to `error.tsx`) |
-| Create task modal  | `useEffect` + `fetch` to load form options, `onClick` submit via API route               | Server data as props, form `action` + server action, `useOptimistic` list add     |
-| Task card controls | `onClick` → `await` → `setState` for inline priority/assignee, UI freezes                | Form `action` + `useOptimistic`                                                   |
-| Status select      | `onClick` → `await` → `setState`, UI freezes during update                               | Form `action` + `useOptimistic`                                                   |
-| Assignee select    | `onClick` → `await` → `setState`, no instant feedback                                    | Form `action` + `useOptimistic`                                                   |
+| Home page          | Async page — blocks until all data loads, no streaming                                   | Non-async page with `<Suspense>` boundaries and skeleton fallbacks                |
+| Task detail page   | Async page — blocks on task fetch before rendering anything                              | Non-async page passing promises to `<Suspense>`-wrapped children                  |
+| Drag-and-drop      | `useState` + `fetch`, never reverts on failure, raw `await` bypasses error boundary      | `useOptimistic` (auto-reverts) + `startTransition` (errors bubble to `error.tsx`) |
+| Create task modal  | `fetch` POST to API route, manual `isSubmitting` state                                   | Server action + `useActionState` for form state + pending tracking                |
+| Task card controls | `onClick` → `fetch` → `setState` for inline priority/assignee, UI freezes               | `useOptimistic` + `startTransition`                                               |
+| Status select      | `onClick` → `fetch` → `setState`, UI freezes during update                              | `useOptimistic` + `startTransition`                                               |
+| Assignee select    | `onClick` → `fetch` → `setState`, no instant feedback                                   | `useOptimistic` + `startTransition`                                               |
+| Priority button    | `onClick` → `fetch` → `setState`, no instant feedback                                   | Form `action` + `useOptimistic` with reducer                                      |
 | Label filter       | `onChange` → `router.push`, no pending feedback                                          | `action` prop + `data-pending` CSS pattern                                        |
-| Priority button    | `onClick` → `await` → `setState`, no instant feedback                                    | Form `action` + `useOptimistic` with reducer                                      |
-| Comment form       | `onClick` → `await` → manual refetch                                                     | Form `action` + `useOptimistic` list add                                          |
-| Comment list       | `useEffect` + `fetch` + manual state management                                          | Server component with `<Suspense>`                                                |
-| Delete button      | `onClick` → `await` → callback, no feedback                                              | `useTransition` + `data-pending`                                                  |
+| Comment form       | `onClick` → `fetch` → manual refetch callback                                           | Form `action` + `useOptimistic` list add                                          |
+| Comment list       | `useEffect` + `fetch` from API route + manual state management                          | Server component with `<Suspense>`                                                |
+| Delete button      | `onClick` → `fetch` → callback, no feedback                                             | Server action + `useOptimistic`                                                   |
 
 
 ## Try It
