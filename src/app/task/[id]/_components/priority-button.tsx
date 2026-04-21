@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronUp } from "lucide-react";
-import { cyclePriority } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";
 
@@ -20,20 +18,19 @@ export function PriorityButton({
   taskId: string;
   initialPriority: Priority;
 }) {
-  const router = useRouter();
   const [priority, setPriority] = useState(initialPriority);
 
-  async function handleClick() {
-    const next = await cyclePriority(taskId);
-    if (next) setPriority(next);
-    router.refresh();
+  async function handleCycle() {
+    const res = await fetch(`/api/tasks/${taskId}/priority`, { method: "PATCH" });
+    const data = await res.json();
+    if (data.priority) setPriority(data.priority);
   }
 
   const config = priorityConfig[priority];
 
   return (
     <button
-      onClick={handleClick}
+      onClick={handleCycle}
       className={cn(
         "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors hover:bg-white/5",
         config.class

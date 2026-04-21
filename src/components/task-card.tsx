@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { cyclePriority, reassignTask } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
 
@@ -15,9 +14,9 @@ const priorityDot: Record<Priority, string> = {
 export function TaskCard({
   id,
   title,
-  priority: initialPriority,
+  priority,
   labels,
-  assignee: initialAssignee,
+  assignee,
 }: {
   id: string;
   title: string;
@@ -27,23 +26,26 @@ export function TaskCard({
   status: Status;
 }) {
   const router = useRouter();
-  const [priority, setPriority] = useState(initialPriority);
-  const [assignee, setAssignee] = useState(initialAssignee);
+  const [currentPriority, setCurrentPriority] = useState(priority);
+  const [currentAssignee, setCurrentAssignee] = useState(assignee);
 
-  async function handlePriorityClick(e: React.MouseEvent) {
+  async function handlePriority(e: React.MouseEvent) {
     e.stopPropagation();
-    const next = await cyclePriority(id);
-    if (next) setPriority(next);
-    router.refresh();
+    const res = await fetch(`/api/tasks/${id}/priority`, { method: "PATCH" });
+    const data = await res.json();
+    if (data.priority) setCurrentPriority(data.priority);
   }
 
-  async function handleAssigneeClick(e: React.MouseEvent) {
+  async function handleAssignee(e: React.MouseEvent) {
     e.stopPropagation();
-    const currentIdx = ASSIGNEES.indexOf(assignee);
-    const nextAssignee = ASSIGNEES[(currentIdx + 1) % ASSIGNEES.length];
-    const result = await reassignTask(id, nextAssignee);
-    if (result) setAssignee(result);
-    router.refresh();
+    const nextAssignee = ASSIGNEES[(ASSIGNEES.indexOf(currentAssignee) + 1) % ASSIGNEES.length];
+    const res = await fetch(`/api/tasks/${id}/assignee`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignee: nextAssignee }),
+    });
+    const data = await res.json();
+    if (data.assignee) setCurrentAssignee(data.assignee);
   }
 
   function handleDragStart(e: React.DragEvent) {
@@ -64,12 +66,12 @@ export function TaskCard({
     >
       <div className="mb-2 flex items-center gap-2">
         <button
-          onClick={handlePriorityClick}
+          onClick={handlePriority}
           className={cn(
             "size-2 shrink-0 cursor-pointer rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/10",
-            priorityDot[priority]
+            priorityDot[currentPriority]
           )}
-          title={`${priority} priority — click to cycle`}
+          title={`${currentPriority} priority — click to cycle`}
         />
         <h3 className="flex-1 text-[13px] font-medium leading-snug text-white/80 group-hover/card:text-white">
           {title}
@@ -94,11 +96,11 @@ export function TaskCard({
         </div>
 
         <button
-          onClick={handleAssigneeClick}
+          onClick={handleAssignee}
           className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] font-mono text-[10px] text-white/40 transition-colors hover:bg-white/[0.12] hover:text-white/60"
-          title={`${assignee} — click to reassign`}
+          title={`${currentAssignee} — click to reassign`}
         >
-          {assignee[0]}
+          {currentAssignee[0]}
         </button>
       </div>
     </div>

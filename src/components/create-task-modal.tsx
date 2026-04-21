@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import {
+  ASSIGNEES,
+  LABELS,
+  type Assignee,
+  type Label,
+  type Priority,
+  type Status,
+} from "@/lib/data";
 import {
   Dialog,
   DialogContent,
@@ -13,86 +21,36 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-type OptionsData = {
-  assignees: string[];
-  labels: string[];
-};
-
 export function CreateTaskModal() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("todo");
-  const [priority, setPriority] = useState("medium");
-  const [assignee, setAssignee] = useState("");
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formKey, setFormKey] = useState(0);
 
-  const [options, setOptions] = useState<OptionsData | null>(null);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get("title") as string;
+    if (!title.trim()) return;
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setIsLoadingOptions(true); // eslint-disable-line react-hooks/set-state-in-effect -- intentional legacy pattern for demo
-    fetch(`/api/options?t=${Date.now()}`)
-      .then((res) => res.json())
-      .then((data: OptionsData) => {
-        setOptions(data);
-        if (data.assignees.length > 0 && !assignee) {
-          setAssignee(data.assignees[0]);
-        }
-        setIsLoadingOptions(false);
-      });
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function toggleLabel(label: string) {
-    setSelectedLabels((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
-    );
-  }
-
-  async function handleSubmit() {
-    if (!title.trim() || isSubmitting) return;
     setIsSubmitting(true);
-
     await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title,
-        description,
-        status,
-        priority,
-        assignee,
-        labels: selectedLabels,
+        description: formData.get("description") as string,
+        status: (formData.get("status") as Status) || "todo",
+        priority: (formData.get("priority") as Priority) || "medium",
+        assignee: (formData.get("assignee") as string) || ASSIGNEES[0],
+        labels: formData.getAll("label") as Label[],
       }),
     });
-
-    setTitle("");
-    setDescription("");
-    setStatus("todo");
-    setPriority("medium");
-    setAssignee("");
-    setSelectedLabels([]);
     setIsSubmitting(false);
     setIsOpen(false);
-
+    setFormKey((k) => k + 1);
     router.refresh();
   }
-
-  const statuses = [
-    { value: "todo", label: "Todo" },
-    { value: "in-progress", label: "In Progress" },
-    { value: "done", label: "Done" },
-  ];
-
-  const priorities = [
-    { value: "low", label: "Low" },
-    { value: "medium", label: "Med" },
-    { value: "high", label: "High" },
-  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -106,152 +64,176 @@ export function CreateTaskModal() {
           <DialogTitle>Create Task</DialogTitle>
         </DialogHeader>
 
-        {isLoadingOptions ? (
-          <div className="space-y-3 py-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-8 animate-pulse rounded-lg bg-white/[0.04]"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4 py-1">
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Title
-              </label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Task title..."
-                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
-              />
-            </div>
+        <form onSubmit={handleSubmit}>
+          <CreateTaskFormFields key={formKey} />
 
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the task..."
-                rows={2}
-                className="w-full resize-none rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Status
-              </label>
-              <div className="flex gap-1">
-                {statuses.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => setStatus(s.value)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-                      status === s.value
-                        ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
-                    )}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Priority
-              </label>
-              <div className="flex gap-1">
-                {priorities.map((p) => (
-                  <button
-                    key={p.value}
-                    onClick={() => setPriority(p.value)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-                      priority === p.value
-                        ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Assignee
-              </label>
-              <div className="flex flex-wrap gap-1">
-                {(options?.assignees ?? []).map((name) => (
-                  <button
-                    key={name}
-                    onClick={() => setAssignee(name)}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
-                      assignee === name
-                        ? "bg-white/[0.1] text-white/80"
-                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "flex size-4 items-center justify-center rounded-full text-[9px]",
-                        assignee === name
-                          ? "bg-white/[0.12] text-white/70"
-                          : "bg-white/[0.06] text-white/30",
-                      )}
-                    >
-                      {name[0]}
-                    </span>
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[12px] text-white/40">
-                Labels
-              </label>
-              <div className="flex flex-wrap gap-1">
-                {(options?.labels ?? []).map((label) => (
-                  <button
-                    key={label}
-                    onClick={() => toggleLabel(label)}
-                    className={cn(
-                      "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize transition-colors",
-                      selectedLabels.includes(label)
-                        ? "bg-white/[0.1] text-white/70"
-                        : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <DialogFooter>
-          <button
-            onClick={handleSubmit}
-            disabled={!title.trim() || isSubmitting || isLoadingOptions}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-40 sm:w-auto"
-          >
-            {isSubmitting ? "Creating..." : "Create Task"}
-          </button>
-        </DialogFooter>
+          <DialogFooter className="mt-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-40 sm:w-auto"
+            >
+              {isSubmitting ? "Creating..." : "Create Task"}
+            </button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CreateTaskFormFields() {
+  const [status, setStatus] = useState<Status>("todo");
+  const [priority, setPriority] = useState<Priority>("medium");
+  const [assignee, setAssignee] = useState<Assignee>(ASSIGNEES[0]);
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
+
+  const statuses: { value: Status; label: string }[] = [
+    { value: "todo", label: "Todo" },
+    { value: "in-progress", label: "In Progress" },
+    { value: "done", label: "Done" },
+  ];
+
+  const priorities: { value: Priority; label: string }[] = [
+    { value: "low", label: "Low" },
+    { value: "medium", label: "Med" },
+    { value: "high", label: "High" },
+  ];
+
+  return (
+    <div className="space-y-4 py-1">
+      <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="priority" value={priority} />
+      <input type="hidden" name="assignee" value={assignee} />
+      {selectedLabels.map((l) => (
+        <input key={l} type="hidden" name="label" value={l} />
+      ))}
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">Title</label>
+        <input
+          name="title"
+          placeholder="Task title..."
+          required
+          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Description
+        </label>
+        <textarea
+          name="description"
+          placeholder="Describe the task..."
+          rows={2}
+          className="w-full resize-none rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">Status</label>
+        <div className="flex gap-1">
+          {statuses.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => setStatus(s.value)}
+              className={cn(
+                "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
+                status === s.value
+                  ? "bg-white/[0.1] text-white/80"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Priority
+        </label>
+        <div className="flex gap-1">
+          {priorities.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => setPriority(p.value)}
+              className={cn(
+                "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
+                priority === p.value
+                  ? "bg-white/[0.1] text-white/80"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">
+          Assignee
+        </label>
+        <div className="flex flex-wrap gap-1">
+          {ASSIGNEES.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setAssignee(name)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
+                assignee === name
+                  ? "bg-white/[0.1] text-white/80"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-4 items-center justify-center rounded-full text-[9px]",
+                  assignee === name
+                    ? "bg-white/[0.12] text-white/70"
+                    : "bg-white/[0.06] text-white/30",
+                )}
+              >
+                {name[0]}
+              </span>
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-[12px] text-white/40">Labels</label>
+        <div className="flex flex-wrap gap-1">
+          {LABELS.map((label) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() =>
+                setSelectedLabels((prev) =>
+                  prev.includes(label)
+                    ? prev.filter((l) => l !== label)
+                    : [...prev, label],
+                )
+              }
+              className={cn(
+                "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize transition-colors",
+                selectedLabels.includes(label)
+                  ? "bg-white/[0.1] text-white/70"
+                  : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

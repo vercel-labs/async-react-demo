@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ArrowUp } from "lucide-react";
-import { addComment } from "@/lib/actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +18,11 @@ export function CommentForm({
   async function handleSubmit() {
     if (!content.trim() || isSubmitting) return;
     setIsSubmitting(true);
-    await addComment(taskId, content);
+    await fetch(`/api/comments/${taskId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
     setContent("");
     setIsSubmitting(false);
     onCommentAdded();

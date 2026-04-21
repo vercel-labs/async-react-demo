@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { updateStatus } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import type { Status } from "@/lib/data";
 
@@ -19,14 +17,17 @@ export function StatusSelect({
   taskId: string;
   initialStatus: Status;
 }) {
-  const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
 
-  async function handleClick(newStatus: Status) {
+  async function handleStatus(newStatus: Status) {
     if (newStatus === status) return;
-    const result = await updateStatus(taskId, newStatus);
-    if (result) setStatus(result);
-    router.refresh();
+    const res = await fetch(`/api/tasks/${taskId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    const data = await res.json();
+    if (data.status) setStatus(data.status);
   }
 
   return (
@@ -34,7 +35,7 @@ export function StatusSelect({
       {statuses.map((s) => (
         <button
           key={s.value}
-          onClick={() => handleClick(s.value)}
+          onClick={() => handleStatus(s.value)}
           className={cn(
             "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
             status === s.value

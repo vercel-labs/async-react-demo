@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { reassignTask } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee } from "@/lib/data";
 
@@ -13,14 +11,17 @@ export function AssigneeSelect({
   taskId: string;
   initialAssignee: Assignee;
 }) {
-  const router = useRouter();
-  const [assignee, setAssignee] = useState<Assignee>(initialAssignee);
+  const [assignee, setAssignee] = useState(initialAssignee);
 
-  async function handleClick(newAssignee: Assignee) {
+  async function handleAssign(newAssignee: Assignee) {
     if (newAssignee === assignee) return;
-    const result = await reassignTask(taskId, newAssignee);
-    if (result) setAssignee(result);
-    router.refresh();
+    const res = await fetch(`/api/tasks/${taskId}/assignee`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignee: newAssignee }),
+    });
+    const data = await res.json();
+    if (data.assignee) setAssignee(data.assignee);
   }
 
   return (
@@ -28,7 +29,7 @@ export function AssigneeSelect({
       {ASSIGNEES.map((name) => (
         <button
           key={name}
-          onClick={() => handleClick(name)}
+          onClick={() => handleAssign(name)}
           className={cn(
             "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
             assignee === name
