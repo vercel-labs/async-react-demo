@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useOptimistic, useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { updateStatus } from "@/data/actions/task";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ export function BoardClient({
 }: {
   tasks: SerializedTask[];
 }) {
+  const [, startTransition] = useTransition();
   const [optimisticTasks, moveTask] = useOptimistic(
     tasks,
     (currentTasks, action: { taskId: string; status: Status }) =>
