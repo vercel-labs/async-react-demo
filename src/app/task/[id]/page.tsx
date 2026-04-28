@@ -30,6 +30,8 @@ export default function TaskPage({
         <TaskDetail taskPromise={taskPromise} />
       </Suspense>
 
+      <h3 className="mb-4 text-[13px] font-medium text-white/60">Discussion</h3>
+
       <Suspense fallback={<CommentSectionSkeleton />}>
         <CommentSection taskIdPromise={taskIdPromise} />
       </Suspense>
