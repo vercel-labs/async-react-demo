@@ -1,17 +1,11 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { deleteComment } from "@/data/actions/comment";
 
-export function DeleteButton({
-  commentId,
-  onDeleted,
-}: {
-  commentId: string;
-  onDeleted: () => void;
-}) {
+export function DeleteButton({ commentId }: { commentId: string }) {
   async function handleClick() {
-    await fetch(`/api/comments/delete/${commentId}`, { method: "DELETE" });
-    onDeleted();
+    await deleteComment(commentId);
   }
 
   return (

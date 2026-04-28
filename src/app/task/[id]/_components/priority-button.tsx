@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronUp } from "lucide-react";
+import { cyclePriority } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";
 
@@ -13,17 +13,13 @@ const priorityConfig: Record<Priority, { label: string; class: string }> = {
 
 export function PriorityButton({
   taskId,
-  initialPriority,
+  priority,
 }: {
   taskId: string;
-  initialPriority: Priority;
+  priority: Priority;
 }) {
-  const [priority, setPriority] = useState(initialPriority);
-
   async function handleCycle() {
-    const res = await fetch(`/api/tasks/${taskId}/priority`, { method: "PATCH" });
-    const data = await res.json();
-    if (data.priority) setPriority(data.priority);
+    await cyclePriority(taskId);
   }
 
   const config = priorityConfig[priority];

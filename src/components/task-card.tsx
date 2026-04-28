@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { cyclePriority, reassignTask } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
 
@@ -26,26 +26,16 @@ export function TaskCard({
   status: Status;
 }) {
   const router = useRouter();
-  const [currentPriority, setCurrentPriority] = useState(priority);
-  const [currentAssignee, setCurrentAssignee] = useState(assignee);
 
   async function handlePriority(e: React.MouseEvent) {
     e.stopPropagation();
-    const res = await fetch(`/api/tasks/${id}/priority`, { method: "PATCH" });
-    const data = await res.json();
-    if (data.priority) setCurrentPriority(data.priority);
+    await cyclePriority(id);
   }
 
   async function handleAssignee(e: React.MouseEvent) {
     e.stopPropagation();
-    const nextAssignee = ASSIGNEES[(ASSIGNEES.indexOf(currentAssignee) + 1) % ASSIGNEES.length];
-    const res = await fetch(`/api/tasks/${id}/assignee`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignee: nextAssignee }),
-    });
-    const data = await res.json();
-    if (data.assignee) setCurrentAssignee(data.assignee);
+    const nextAssignee = ASSIGNEES[(ASSIGNEES.indexOf(assignee) + 1) % ASSIGNEES.length];
+    await reassignTask(id, nextAssignee);
   }
 
   function handleDragStart(e: React.DragEvent) {
@@ -69,9 +59,9 @@ export function TaskCard({
           onClick={handlePriority}
           className={cn(
             "size-2 shrink-0 cursor-pointer rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/10",
-            priorityDot[currentPriority]
+            priorityDot[priority]
           )}
-          title={`${currentPriority} priority — click to cycle`}
+          title={`${priority} priority — click to cycle`}
         />
         <h3 className="flex-1 text-[13px] font-medium leading-snug text-white/80 group-hover/card:text-white">
           {title}
@@ -98,9 +88,9 @@ export function TaskCard({
         <button
           onClick={handleAssignee}
           className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] font-mono text-[10px] text-white/40 transition-colors hover:bg-white/[0.12] hover:text-white/60"
-          title={`${currentAssignee} — click to reassign`}
+          title={`${assignee} — click to reassign`}
         >
-          {currentAssignee[0]}
+          {assignee[0]}
         </button>
       </div>
     </div>

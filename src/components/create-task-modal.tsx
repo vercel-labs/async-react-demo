@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import { createTask } from "@/data/actions/task";
 import {
   ASSIGNEES,
   LABELS,
@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export function CreateTaskModal() {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -36,22 +35,17 @@ export function CreateTaskModal() {
     if (!title.trim()) return;
 
     setIsSubmitting(true);
-    await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        description: formData.get("description") as string,
-        status: (formData.get("status") as Status) || "todo",
-        priority: (formData.get("priority") as Priority) || "medium",
-        assignee: (formData.get("assignee") as string) || ASSIGNEES[0],
-        labels: formData.getAll("label") as Label[],
-      }),
+    await createTask({
+      title,
+      description: formData.get("description") as string,
+      status: (formData.get("status") as Status) || "todo",
+      priority: (formData.get("priority") as Priority) || "medium",
+      assignee: (formData.get("assignee") as string) || ASSIGNEES[0],
+      labels: formData.getAll("label") as Label[],
     });
     setIsSubmitting(false);
     setIsOpen(false);
     setFormKey((k) => k + 1);
-    router.refresh();
   }
 
   return (
@@ -131,7 +125,7 @@ function CreateTaskFormFields() {
                 "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                 status === s.value
                   ? "bg-white/[0.1] text-white/80"
-                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
               )}
             >
               {s.label}
@@ -154,7 +148,7 @@ function CreateTaskFormFields() {
                 "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                 priority === p.value
                   ? "bg-white/[0.1] text-white/80"
-                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
               )}
             >
               {p.label}
@@ -177,7 +171,7 @@ function CreateTaskFormFields() {
                 "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                 assignee === name
                   ? "bg-white/[0.1] text-white/80"
-                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
               )}
             >
               <span
@@ -185,7 +179,7 @@ function CreateTaskFormFields() {
                   "flex size-4 items-center justify-center rounded-full text-[9px]",
                   assignee === name
                     ? "bg-white/[0.12] text-white/70"
-                    : "bg-white/[0.06] text-white/30",
+                    : "bg-white/[0.06] text-white/30"
                 )}
               >
                 {name[0]}
@@ -207,14 +201,14 @@ function CreateTaskFormFields() {
                 setSelectedLabels((prev) =>
                   prev.includes(label)
                     ? prev.filter((l) => l !== label)
-                    : [...prev, label],
+                    : [...prev, label]
                 )
               }
               className={cn(
                 "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize transition-colors",
                 selectedLabels.includes(label)
                   ? "bg-white/[0.1] text-white/70"
-                  : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]",
+                  : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]"
               )}
             >
               {label}

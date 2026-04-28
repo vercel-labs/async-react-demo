@@ -10,5 +10,5 @@ export async function Board({ label }: { label?: Label }) {
     createdAt: t.createdAt.toISOString(),
   }));
 
-  return <BoardClient key={label ?? "all"} initialTasks={serialized} />;
+  return <BoardClient key={label ?? "all"} tasks={serialized} />;
 }

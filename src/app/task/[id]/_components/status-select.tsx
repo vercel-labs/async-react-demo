@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { updateStatus } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import type { Status } from "@/lib/data";
 
@@ -12,22 +12,14 @@ const statuses: { value: Status; label: string }[] = [
 
 export function StatusSelect({
   taskId,
-  initialStatus,
+  status,
 }: {
   taskId: string;
-  initialStatus: Status;
+  status: Status;
 }) {
-  const [status, setStatus] = useState(initialStatus);
-
   async function handleStatus(newStatus: Status) {
     if (newStatus === status) return;
-    const res = await fetch(`/api/tasks/${taskId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    const data = await res.json();
-    if (data.status) setStatus(data.status);
+    await updateStatus(taskId, newStatus);
   }
 
   return (

@@ -1,50 +1,11 @@
-"use client";
-
-import { useCallback, useEffect, useState } from "react";
+import { getComments } from "@/data/queries/comment";
 import { CommentForm } from "./comment-form";
 import { DeleteButton } from "./delete-button";
 import { timeAgo } from "@/lib/utils";
-import type { Comment } from "@/lib/data";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export function CommentList({
-  taskId,
-  userName,
-}: {
-  taskId: string;
-  userName: string;
-}) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchComments = useCallback(async () => {
-    const res = await fetch(`/api/comments/${taskId}?t=${Date.now()}`);
-    const data = await res.json();
-    setComments(
-      data.map((c: Comment & { createdAt: string }) => ({
-        ...c,
-        createdAt: new Date(c.createdAt),
-      }))
-    );
-    setIsLoading(false);
-  }, [taskId]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional legacy pattern for demo
-    fetchComments();
-  }, [fetchComments]);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-14 animate-pulse rounded-lg bg-white/[0.03]"
-          />
-        ))}
-      </div>
-    );
-  }
+export async function CommentSection({ taskId }: { taskId: string }) {
+  const comments = await getComments(taskId);
 
   return (
     <div>
@@ -58,7 +19,7 @@ export function CommentList({
       </h3>
 
       <div className="mb-5">
-        <CommentForm taskId={taskId} onCommentAdded={fetchComments} />
+        <CommentForm taskId={taskId} />
       </div>
 
       <div className="space-y-1">
@@ -86,12 +47,9 @@ export function CommentList({
                   </p>
                 </div>
               </div>
-              {comment.userName === userName && (
+              {comment.userName === "You" && (
                 <div className="opacity-0 transition-opacity group-hover/comment:opacity-100">
-                  <DeleteButton
-                    commentId={comment.id}
-                    onDeleted={fetchComments}
-                  />
+                  <DeleteButton commentId={comment.id} />
                 </div>
               )}
             </div>
@@ -105,5 +63,11 @@ export function CommentList({
         )}
       </div>
     </div>
+  );
+}
+
+export function CommentSectionSkeleton() {
+  return (
+    <Skeleton className="h-64 rounded-xl bg-white/[0.03]" />
   );
 }

@@ -1,27 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { reassignTask } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee } from "@/lib/data";
 
 export function AssigneeSelect({
   taskId,
-  initialAssignee,
+  assignee,
 }: {
   taskId: string;
-  initialAssignee: Assignee;
+  assignee: Assignee;
 }) {
-  const [assignee, setAssignee] = useState(initialAssignee);
-
   async function handleAssign(newAssignee: Assignee) {
     if (newAssignee === assignee) return;
-    const res = await fetch(`/api/tasks/${taskId}/assignee`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignee: newAssignee }),
-    });
-    const data = await res.json();
-    if (data.assignee) setAssignee(data.assignee);
+    await reassignTask(taskId, newAssignee);
   }
 
   return (

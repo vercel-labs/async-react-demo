@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { updateStatus } from "@/data/actions/task";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
 import type { Assignee, Label, Priority, Status } from "@/lib/data";
@@ -22,28 +23,22 @@ const columns: { status: Status; title: string }[] = [
   { status: "done", title: "Done" },
 ];
 
-export function BoardClient({ initialTasks }: { initialTasks: SerializedTask[] }) {
-  const [localTasks, setLocalTasks] = useState(initialTasks);
+export function BoardClient({
+  tasks,
+}: {
+  tasks: SerializedTask[];
+}) {
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
 
   async function handleDrop(targetStatus: Status, taskId: string) {
-    setLocalTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, status: targetStatus } : t
-      )
-    );
     setDragOverColumn(null);
-    await fetch(`/api/tasks/${taskId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: targetStatus }),
-    });
+    await updateStatus(taskId, targetStatus);
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {columns.map((col) => {
-        const columnTasks = localTasks.filter((t) => t.status === col.status);
+        const columnTasks = tasks.filter((t) => t.status === col.status);
 
         return (
           <div
