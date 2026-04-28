@@ -1,8 +1,8 @@
 # Async React Demo
 
-A Next.js task board for testing the [Async React agent skill](https://github.com/vercel-labs/agent-skills/tree/main/skills/async-react) — an audit and review tool that scans for async coordination issues and suggests fixes using React 19's primitives.
+A Next.js task board demonstrating async React coordination — optimistic updates, transitions, pending feedback, and form state management. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/agent-skills/tree/main/skills/async-react).
 
-The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch has all async coordination patterns applied; the [`plain`](https://github.com/vercel-labs/async-react-demo/tree/plain) branch is the base app with legacy patterns and no feedback.
+The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch has all async coordination patterns applied; the [`plain`](https://github.com/vercel-labs/async-react-demo/tree/plain) branch is the base app without any coordination.
 
 **[Live Demo](https://async-react-demo.labs.vercel.dev/)**
 
@@ -11,50 +11,37 @@ The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch h
 - **Kanban board** — Three-column layout (Todo / In Progress / Done) with drag-and-drop and label filter chips
 - **Create task** — Modal dialog with full form (title, description, status, priority, assignee, labels)
 - **Task detail page** — Full task view with metadata, inline controls, and comment thread
-- **Status changes** — Drag-and-drop between columns or change from the detail page (30% random failure rate to demo error handling)
-- **Assignee reassignment** — Reassign tasks to team members (Sarah, Marcus, Elena, Jordan)
 - **Priority cycling** — Cycle task priority (low → medium → high → low)
+- **Assignee reassignment** — Reassign tasks to team members
 - **Comments** — Add and delete comments on any task
-- **Label filtering** — Filter board by label via URL search params
 
-## Anti-Patterns (plain branch)
+## Async React Patterns
 
-
-| Where              | What's broken                                                                            | Async React fix                                                                   |
-| ------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Home page          | Async page — blocks until all data loads, no streaming                                   | Non-async page with `<Suspense>` boundaries and skeleton fallbacks                |
-| Task detail page   | Async page — blocks on task fetch before rendering anything                              | Non-async page passing promises to `<Suspense>`-wrapped children                  |
-| Drag-and-drop      | `useState` + `fetch`, never reverts on failure, raw `await` bypasses error boundary      | `useOptimistic` (auto-reverts) + `startTransition` (errors bubble to `error.tsx`) |
-| Create task modal  | `fetch` POST to API route, manual `isSubmitting` state                                   | Server action + `useActionState` for form state + pending tracking                |
-| Task card controls | `onClick` → `fetch` → `setState` for inline priority/assignee, UI freezes               | `useOptimistic` + `startTransition`                                               |
-| Status select      | `onClick` → `fetch` → `setState`, UI freezes during update                              | `useOptimistic` + `startTransition`                                               |
-| Assignee select    | `onClick` → `fetch` → `setState`, no instant feedback                                   | `useOptimistic` + `startTransition`                                               |
-| Priority button    | `onClick` → `fetch` → `setState`, no instant feedback                                   | Form `action` + `useOptimistic` with reducer                                      |
-| Label filter       | `onChange` → `router.push`, no pending feedback                                          | `action` prop + `data-pending` CSS pattern                                        |
-| Comment form       | `onClick` → `fetch` → manual refetch callback                                           | Form `action` + `useOptimistic` list add                                          |
-| Comment list       | `useEffect` + `fetch` from API route + manual state management                          | Server component with `<Suspense>`                                                |
-| Delete button      | `onClick` → `fetch` → callback, no feedback                                             | Server action + `useOptimistic`                                                   |
-
+| Where | What happens | How |
+|-------|-------------|-----|
+| Drag-and-drop | Card moves to target column instantly, reverts on failure | `useOptimistic` with reducer + `startTransition` |
+| Task card controls | Priority and assignee update instantly on click | Multiple `useOptimistic` calls with updater functions |
+| Create task modal | Button shows "Creating...", dialog closes with fresh board in one step | `useActionState` + key-based form reset + double `startTransition` |
+| Comment form | New comment appears immediately while server catches up | Form `action` + `useOptimistic` list add |
+| Delete button | Comment card fades to 30% opacity during deletion | `useOptimistic(false)` + `data-pending` CSS |
 
 ## Try It
 
-Install the skill and point your agent at the `plain` branch:
+Install the skill and prompt your agent against the `plain` branch:
 
 ```bash
-npx skills add vercel-labs/agent-skills --skill async-react
+npx skills add https://github.com/vercel-labs/agent-skills --skill async-react
 ```
 
 ```
 Review the async patterns in this app using the async-react skill. What coordination issues do you see?
 ```
 
-The skill will audit the codebase, produce an interaction map, and ask what you want to prioritize. You drive the conversation:
+The skill will audit the codebase — surface frozen UI, missing feedback, and legacy patterns like `useState` for server-derived data or manual `isSubmitting` state. It presents findings and you decide what to prioritize:
 
 ```
-Fix the FavoriteButton and the comment list first. Leave the drag-and-drop for now.
+Fix the drag-and-drop and comment form first. Leave the delete button for now.
 ```
-
-After it implements your picks, it walks through the changes with you to verify everything coordinates correctly.
 
 ## Setup
 
