@@ -67,7 +67,8 @@ export function TaskDetailSkeleton() {
       </div>
       <div className="mb-6 space-y-2">
         <div className="h-4 w-full animate-pulse rounded bg-white/[0.03]" />
-        <div className="h-4 w-3/4 animate-pulse rounded bg-white/[0.03]" />
+        <div className="h-4 w-11/12 animate-pulse rounded bg-white/[0.03]" />
+        <div className="h-1 w-1/2 animate-pulse rounded bg-white/[0.03]" />
       </div>
       <div className="space-y-3 border-t border-white/[0.06] pt-4">
         {[1, 2, 3].map((i) => (
