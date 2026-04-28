@@ -65,23 +65,23 @@ export function CommentList({
         {comments.map((comment) => (
           <div
             key={comment.id}
-            className="group/comment rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.02]"
+            className="group/comment rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.03]"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2.5">
-                <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-white/[0.08] font-mono text-[9px] text-white/60">
+                <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-white/[0.1] font-mono text-[9px] text-white/70">
                   {comment.userName[0]}
                 </div>
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-[13px] font-medium text-white/85">
+                    <span className="text-[13px] font-medium text-white/90">
                       {comment.userName}
                     </span>
-                    <span className="font-mono text-[10px] text-white/25">
+                    <span className="font-mono text-[10px] text-white/35">
                       {timeAgo(comment.createdAt)}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-white/65">
+                  <p className="mt-0.5 text-[13px] leading-relaxed text-white/70">
                     {comment.content}
                   </p>
                 </div>
