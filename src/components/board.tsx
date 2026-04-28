@@ -1,5 +1,5 @@
 import { BoardClient } from "./board-client";
-import { getTasks } from "@/lib/queries";
+import { getTasks } from "@/data/queries/task";
 import type { Label } from "@/lib/data";
 
 export async function Board({ label }: { label?: Label }) {

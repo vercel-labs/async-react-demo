@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getTask } from "@/lib/queries";
+import { getTask } from "@/data/queries/task";
 import { StatusSelect } from "./_components/status-select";
 import { AssigneeSelect } from "./_components/assignee-select";
 import { PriorityButton } from "./_components/priority-button";
 import { CommentList } from "./_components/comment-list";
-import { cn, timeAgo } from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
 
 export default async function TaskPage({
   params,
@@ -43,9 +43,7 @@ export default async function TaskPage({
               {timeAgo(task.createdAt)}
             </span>
           </div>
-          <h1 className="text-lg font-semibold tracking-tight">
-            {task.title}
-          </h1>
+          <h1 className="text-lg font-semibold tracking-tight">{task.title}</h1>
         </div>
 
         <p className="mb-6 text-sm leading-relaxed text-white/50">
@@ -59,17 +57,11 @@ export default async function TaskPage({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-white/30">Assignee</span>
-            <AssigneeSelect
-              taskId={task.id}
-              initialAssignee={task.assignee}
-            />
+            <AssigneeSelect taskId={task.id} initialAssignee={task.assignee} />
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-white/30">Priority</span>
-            <PriorityButton
-              taskId={task.id}
-              initialPriority={task.priority}
-            />
+            <PriorityButton taskId={task.id} initialPriority={task.priority} />
           </div>
         </div>
       </div>
