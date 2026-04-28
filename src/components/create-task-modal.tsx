@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { Plus } from "lucide-react";
-import { createTask } from "@/lib/actions";
+import { createTask } from "@/data/actions/task";
 import {
   ASSIGNEES,
   LABELS,
@@ -19,6 +19,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export function CreateTaskModal() {
@@ -60,13 +62,9 @@ export function CreateTaskModal() {
           <CreateTaskFormFields key={key} />
 
           <DialogFooter className="mt-4">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-40 sm:w-auto"
-            >
+            <Button type="submit" disabled={isPending} className="sm:w-auto w-full">
               {isPending ? "Creating..." : "Create Task"}
-            </button>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -103,24 +101,14 @@ function CreateTaskFormFields() {
 
       <div>
         <label className="mb-1.5 block text-[12px] text-white/40">Title</label>
-        <input
-          name="title"
-          placeholder="Task title..."
-          required
-          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
-        />
+        <Input name="title" placeholder="Task title..." required />
       </div>
 
       <div>
         <label className="mb-1.5 block text-[12px] text-white/40">
           Description
         </label>
-        <textarea
-          name="description"
-          placeholder="Describe the task..."
-          rows={2}
-          className="w-full resize-none rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/20 focus:border-white/[0.15] focus:outline-none"
-        />
+        <Input name="description" placeholder="Describe the task..." />
       </div>
 
       <div>

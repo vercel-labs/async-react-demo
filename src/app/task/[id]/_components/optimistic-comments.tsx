@@ -2,7 +2,7 @@
 
 import { useOptimistic, useRef } from "react";
 import { ArrowUp } from "lucide-react";
-import { addComment } from "@/lib/actions";
+import { addComment } from "@/data/actions/comment";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CommentCard } from "./comment-card";

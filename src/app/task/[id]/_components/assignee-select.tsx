@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useOptimistic } from "react";
-import { reassignTask } from "@/lib/actions";
+import { reassignTask } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee } from "@/lib/data";
 

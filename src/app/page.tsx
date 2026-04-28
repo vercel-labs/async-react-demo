@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Board, BoardSkeleton } from "@/components/board";
 import { LabelFilter } from "@/components/label-filter";
 import { CreateTaskModal } from "@/components/create-task-modal";
-import { getTasks } from "@/lib/queries";
+import { getTasks } from "@/data/queries/task";
 import type { Label } from "@/lib/data";
 
 export default function Home({

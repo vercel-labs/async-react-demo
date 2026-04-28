@@ -1,5 +1,5 @@
-import { getComments } from "@/lib/queries";
-import { deleteComment } from "@/lib/actions";
+import { getComments } from "@/data/queries/comment";
+import { deleteComment } from "@/data/actions/comment";
 import { CommentCard } from "./comment-card";
 import { OptimisticComments } from "./optimistic-comments";
 import { Skeleton } from "@/components/ui/skeleton";

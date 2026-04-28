@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { StatusSelect } from "./status-select";
 import { AssigneeSelect } from "./assignee-select";
 import { PriorityButton } from "./priority-button";
-import { cn, timeAgo } from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
 import type { Task } from "@/lib/data";
 
 export async function TaskDetail({

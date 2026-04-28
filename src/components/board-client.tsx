@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useOptimistic, useState } from "react";
-import { updateStatus } from "@/lib/actions";
+import { updateStatus } from "@/data/actions/task";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
 import type { Assignee, Label, Priority, Status } from "@/lib/data";

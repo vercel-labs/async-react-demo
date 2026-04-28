@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getTask } from "@/lib/queries";
+import { getTask } from "@/data/queries/task";
 import { TaskDetail, TaskDetailSkeleton } from "./_components/task-detail";
 import {
   CommentSection,

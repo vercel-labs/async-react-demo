@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useOptimistic } from "react";
-import { updateStatus } from "@/lib/actions";
+import { updateStatus } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import type { Status } from "@/lib/data";
 
