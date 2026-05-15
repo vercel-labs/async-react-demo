@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -6,10 +5,7 @@ import { getTask } from "@/data/queries/task";
 import { StatusSelect } from "./_components/status-select";
 import { AssigneeSelect } from "./_components/assignee-select";
 import { PriorityButton } from "./_components/priority-button";
-import {
-  CommentSection,
-  CommentSectionSkeleton,
-} from "./_components/comment-section";
+import { CommentSection } from "./_components/comment-section";
 import { timeAgo } from "@/lib/utils";
 
 export default async function TaskPage({
@@ -70,9 +66,7 @@ export default async function TaskPage({
         </div>
       </div>
 
-      <Suspense fallback={<CommentSectionSkeleton />}>
-        <CommentSection taskId={task.id} />
-      </Suspense>
+      <CommentSection taskId={task.id} />
     </div>
   );
 }
