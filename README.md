@@ -1,6 +1,6 @@
 # Async React Demo
 
-A Next.js task board demonstrating async React coordination — optimistic updates, transitions, pending feedback, and form state management. Also serves as a testing ground for the [Async React agent skill](https://github.com/vercel-labs/agent-skills/tree/main/skills/async-react).
+A Next.js task board demonstrating async React coordination — optimistic updates, transitions, pending feedback, and form state management.
 
 The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch has all async coordination patterns applied; the [`plain`](https://github.com/vercel-labs/async-react-demo/tree/plain) branch is the base app without any coordination.
 
@@ -24,24 +24,6 @@ The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch h
 | Create task modal | Button shows "Creating...", dialog closes with fresh board in one step | `useActionState` + key-based form reset + double `startTransition` |
 | Comment form | New comment appears immediately while server catches up | Form `action` + `useOptimistic` list add |
 | Delete button | Comment card fades to 30% opacity during deletion | `useOptimistic(false)` + `data-pending` CSS |
-
-## Try It
-
-Install the skill and prompt your agent against the `plain` branch:
-
-```bash
-npx skills add https://github.com/vercel-labs/agent-skills --skill async-react
-```
-
-```
-Review the async patterns in this app using the async-react skill. What coordination issues do you see?
-```
-
-The skill will audit the codebase — surface frozen UI, missing feedback, and legacy patterns like `useState` for server-derived data or manual `isSubmitting` state. It presents findings and you decide what to prioritize:
-
-```
-Fix the drag-and-drop and comment form first. Leave the delete button for now.
-```
 
 ## Setup
 
