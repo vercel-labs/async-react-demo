@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { createTask } from "@/data/actions/task";
 import {
   ASSIGNEES,
@@ -41,6 +42,7 @@ export function CreateTaskModal() {
       });
 
       startTransition(() => setIsOpen(false));
+      toast.success("Task created");
       return { key: prev.key + 1 };
     },
     { key: 0 }

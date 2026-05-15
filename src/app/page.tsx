@@ -5,6 +5,8 @@ import { CreateTaskModal } from "@/components/create-task-modal";
 import { getTasks } from "@/data/queries/task";
 import type { Label } from "@/lib/data";
 
+export const unstable_prefetch = "force-runtime";
+
 export default function Home({
   searchParams,
 }: {

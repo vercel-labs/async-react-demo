@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   typedRoutes: true,
   experimental: {
+    instantInsights: {
+      validationLevel: "warning",
+    },
     useOffline: true,
     varyParams: true,
     prefetchInlining: true,

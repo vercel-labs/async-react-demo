@@ -2,6 +2,7 @@
 
 import { useOptimistic, useRef } from "react";
 import { ArrowUp } from "lucide-react";
+import { toast } from "sonner";
 import { addComment } from "@/data/actions/comment";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export function OptimisticComments({ taskId }: { taskId: string }) {
             ]);
 
             await addComment(taskId, content);
+            toast.success("Comment posted");
           }}
         >
           <Input

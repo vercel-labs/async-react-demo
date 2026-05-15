@@ -2,6 +2,7 @@
 
 import { useOptimistic } from "react";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function DeleteButton({
   deleteAction,
@@ -15,6 +16,7 @@ export function DeleteButton({
       action={async () => {
         setIsPending(true);
         await deleteAction();
+        toast.success("Comment deleted");
       }}
     >
       <button
