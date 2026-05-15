@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useOptimistic } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cyclePriority, reassignTask } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, PRIORITY_CYCLE, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
@@ -26,11 +26,11 @@ export function TaskCard({
   assignee: Assignee;
   status: Status;
 }) {
-  const router = useRouter();
   const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
   const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
 
   function handlePriority(e: React.MouseEvent) {
+    e.preventDefault();
     e.stopPropagation();
     startTransition(async () => {
       setOptimisticPriority((current) => PRIORITY_CYCLE[current]);
@@ -39,6 +39,7 @@ export function TaskCard({
   }
 
   function handleAssignee(e: React.MouseEvent) {
+    e.preventDefault();
     e.stopPropagation();
     startTransition(async () => {
       const nextAssignee = ASSIGNEES[(ASSIGNEES.indexOf(optimisticAssignee) + 1) % ASSIGNEES.length];
@@ -52,16 +53,12 @@ export function TaskCard({
     e.dataTransfer.effectAllowed = "move";
   }
 
-  function handleCardClick() {
-    router.push(`/task/${id}`);
-  }
-
   return (
-    <div
+    <Link
+      href={`/task/${id}`}
       draggable
       onDragStart={handleDragStart}
-      onClick={handleCardClick}
-      className="group/card cursor-grab rounded-lg border border-white/[0.04] bg-white/[0.02] p-3 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] active:cursor-grabbing"
+      className="group/card block cursor-grab rounded-lg border border-white/[0.04] bg-white/[0.02] p-3 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] active:cursor-grabbing"
     >
       <div className="mb-2 flex items-center gap-2">
         <button
@@ -102,6 +99,6 @@ export function TaskCard({
           {optimisticAssignee[0]}
         </button>
       </div>
-    </div>
+    </Link>
   );
 }
