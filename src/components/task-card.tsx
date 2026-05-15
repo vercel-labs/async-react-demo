@@ -4,7 +4,14 @@ import { startTransition, useOptimistic } from "react";
 import Link from "next/link";
 import { cyclePriority, reassignTask } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
-import { ASSIGNEES, PRIORITY_CYCLE, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
+import {
+  ASSIGNEES,
+  PRIORITY_CYCLE,
+  type Assignee,
+  type Label,
+  type Priority,
+  type Status,
+} from "@/lib/data";
 
 const priorityDot: Record<Priority, string> = {
   high: "bg-red-400/50",
@@ -42,7 +49,10 @@ export function TaskCard({
     e.preventDefault();
     e.stopPropagation();
     startTransition(async () => {
-      const nextAssignee = ASSIGNEES[(ASSIGNEES.indexOf(optimisticAssignee) + 1) % ASSIGNEES.length];
+      const nextAssignee =
+        ASSIGNEES[
+          (ASSIGNEES.indexOf(optimisticAssignee) + 1) % ASSIGNEES.length
+        ];
       setOptimisticAssignee(nextAssignee);
       await reassignTask(id, nextAssignee);
     });
@@ -65,7 +75,7 @@ export function TaskCard({
           onClick={handlePriority}
           className={cn(
             "size-2 shrink-0 cursor-pointer rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/10",
-            priorityDot[optimisticPriority]
+            priorityDot[optimisticPriority],
           )}
           title={`${optimisticPriority} priority — click to cycle`}
         />
