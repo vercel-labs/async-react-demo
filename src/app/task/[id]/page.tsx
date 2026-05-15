@@ -6,7 +6,7 @@ import { StatusSelect } from "./_components/status-select";
 import { AssigneeSelect } from "./_components/assignee-select";
 import { PriorityButton } from "./_components/priority-button";
 import { CommentSection } from "./_components/comment-section";
-import { timeAgo } from "@/lib/utils";
+import { RelativeTime } from "@/components/relative-time";
 
 export default async function TaskPage({
   params,
@@ -40,7 +40,7 @@ export default async function TaskPage({
               </span>
             ))}
             <span className="font-mono text-[10px] text-white/20">
-              {timeAgo(task.createdAt)}
+              <RelativeTime date={task.createdAt} />
             </span>
           </div>
           <h1 className="text-lg font-semibold tracking-tight">{task.title}</h1>

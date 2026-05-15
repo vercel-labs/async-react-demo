@@ -1,7 +1,7 @@
 import { getComments } from "@/data/queries/comment";
 import { CommentForm } from "./comment-form";
 import { DeleteButton } from "./delete-button";
-import { timeAgo } from "@/lib/utils";
+import { RelativeTime } from "@/components/relative-time";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export async function CommentSection({ taskId }: { taskId: string }) {
@@ -39,7 +39,7 @@ export async function CommentSection({ taskId }: { taskId: string }) {
                       {comment.userName}
                     </span>
                     <span className="font-mono text-[10px] text-white/35">
-                      {timeAgo(comment.createdAt)}
+                      <RelativeTime date={comment.createdAt} />
                     </span>
                   </div>
                   <p className="mt-0.5 text-[13px] leading-relaxed text-white/70">
