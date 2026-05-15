@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { timeAgo } from "@/lib/utils";
+import { RelativeTime } from "@/components/relative-time";
 import { DeleteButton } from "./delete-button";
 
 type CommentCardProps = {
@@ -13,7 +13,7 @@ type CommentCardProps = {
   deleteAction?: () => Promise<void>;
 };
 
-export async function CommentCard({
+export function CommentCard({
   comment,
   pending,
   deleteAction,
@@ -38,11 +38,7 @@ export async function CommentCard({
                 {comment.userName}
               </span>
               <span className="font-mono text-[10px] text-white/35">
-                {await timeAgo(
-                  comment.createdAt instanceof Date
-                    ? comment.createdAt
-                    : new Date(comment.createdAt),
-                )}
+                <RelativeTime date={comment.createdAt} />
               </span>
               {pending && (
                 <span className="text-[10px] text-white/40">Sending...</span>

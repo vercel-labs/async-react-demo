@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { StatusSelect } from "./status-select";
 import { AssigneeSelect } from "./assignee-select";
 import { PriorityButton } from "./priority-button";
-import { timeAgo } from "@/lib/utils";
+import { RelativeTime } from "@/components/relative-time";
 import type { Task } from "@/lib/data";
 
 export async function TaskDetail({
@@ -27,7 +27,7 @@ export async function TaskDetail({
             </span>
           ))}
           <span className="font-mono text-[10px] text-white/20">
-            {await timeAgo(task.createdAt)}
+            <RelativeTime date={task.createdAt} />
           </span>
         </div>
         <h1 className="text-lg font-semibold tracking-tight">{task.title}</h1>
