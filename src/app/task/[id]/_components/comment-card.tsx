@@ -13,7 +13,7 @@ type CommentCardProps = {
   deleteAction?: () => Promise<void>;
 };
 
-export function CommentCard({
+export async function CommentCard({
   comment,
   pending,
   deleteAction,
@@ -24,7 +24,7 @@ export function CommentCard({
         "group/comment rounded-lg px-3 transition-all has-data-pending:opacity-30",
         pending
           ? "animate-pulse opacity-60 py-3"
-          : "py-2.5 hover:bg-white/[0.03]"
+          : "py-2.5 hover:bg-white/[0.03]",
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -38,10 +38,10 @@ export function CommentCard({
                 {comment.userName}
               </span>
               <span className="font-mono text-[10px] text-white/35">
-                {timeAgo(
+                {await timeAgo(
                   comment.createdAt instanceof Date
                     ? comment.createdAt
-                    : new Date(comment.createdAt)
+                    : new Date(comment.createdAt),
                 )}
               </span>
               {pending && (

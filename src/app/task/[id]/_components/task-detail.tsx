@@ -27,7 +27,7 @@ export async function TaskDetail({
             </span>
           ))}
           <span className="font-mono text-[10px] text-white/20">
-            {timeAgo(task.createdAt)}
+            {await timeAgo(task.createdAt)}
           </span>
         </div>
         <h1 className="text-lg font-semibold tracking-tight">{task.title}</h1>
