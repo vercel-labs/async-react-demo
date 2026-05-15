@@ -8,6 +8,8 @@ import {
   CommentSectionSkeleton,
 } from "./_components/comment-section";
 
+export const unstable_prefetch = "force-runtime";
+
 export default function TaskPage({
   params,
 }: {

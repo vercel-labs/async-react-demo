@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod/v4";
-import { refresh } from "next/cache";
+import { updateTag } from "next/cache";
 import {
   tasks,
   getNextTaskId,
@@ -45,18 +45,17 @@ export async function createTask(data: {
     createdAt: new Date(),
   };
   tasks.unshift(task);
-  refresh();
+  updateTag("tasks");
   return { success: true as const, task };
 }
 
-export async function cyclePriority(
-  taskId: string,
-): Promise<Priority | null> {
+export async function cyclePriority(taskId: string): Promise<Priority | null> {
   await delay(500);
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
   task.priority = PRIORITY_CYCLE[task.priority];
-  refresh();
+  updateTag("tasks");
+  updateTag(`task-${taskId}`);
   return task.priority;
 }
 
@@ -68,7 +67,8 @@ export async function updateStatus(
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
   task.status = newStatus;
-  refresh();
+  updateTag("tasks");
+  updateTag(`task-${taskId}`);
   return task.status;
 }
 
@@ -81,6 +81,7 @@ export async function reassignTask(
   if (!task) return null;
   if (!ASSIGNEES.includes(newAssignee as Assignee)) return null;
   task.assignee = newAssignee as Assignee;
-  refresh();
+  updateTag("tasks");
+  updateTag(`task-${taskId}`);
   return task.assignee;
 }

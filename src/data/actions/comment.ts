@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod/v4";
-import { refresh } from "next/cache";
+import { updateTag } from "next/cache";
 import { comments, getNextCommentId, type Comment } from "@/lib/data";
 import { delay } from "@/lib/utils";
 
@@ -29,7 +29,7 @@ export async function addComment(
     createdAt: new Date(),
   };
   comments.push(comment);
-  refresh();
+  updateTag(`comments-${taskId}`);
   return comment;
 }
 
@@ -40,7 +40,8 @@ export async function deleteComment(commentId: string) {
     (c) => c.id === commentId && c.userName === DEFAULT_USER,
   );
   if (idx >= 0) {
+    const taskId = comments[idx].taskId;
     comments.splice(idx, 1);
+    updateTag(`comments-${taskId}`);
   }
-  refresh();
 }
