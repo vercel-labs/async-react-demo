@@ -17,7 +17,7 @@ type PendingComment = {
 
 export function OptimisticComments({ taskId }: { taskId: string }) {
   const [pendingComments, setPendingComments] = useOptimistic<PendingComment[]>(
-    []
+    [],
   );
   const formRef = useRef<HTMLFormElement>(null);
 

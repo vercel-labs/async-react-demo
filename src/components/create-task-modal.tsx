@@ -45,7 +45,7 @@ export function CreateTaskModal() {
       toast.success("Task created");
       return { key: prev.key + 1 };
     },
-    { key: 0 }
+    { key: 0 },
   );
 
   return (
@@ -64,7 +64,11 @@ export function CreateTaskModal() {
           <CreateTaskFormFields key={key} />
 
           <DialogFooter className="mt-4">
-            <Button type="submit" disabled={isPending} className="sm:w-auto w-full">
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="sm:w-auto w-full"
+            >
               {isPending ? "Creating..." : "Create Task"}
             </Button>
           </DialogFooter>
@@ -114,9 +118,7 @@ function CreateTaskFormFields() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-[12px] text-white/40">
-          Status
-        </label>
+        <label className="mb-1.5 block text-[12px] text-white/40">Status</label>
         <div className="flex gap-1">
           {statuses.map((s) => (
             <button
@@ -127,7 +129,7 @@ function CreateTaskFormFields() {
                 "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                 status === s.value
                   ? "bg-white/[0.1] text-white/80"
-                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
               )}
             >
               {s.label}
@@ -150,7 +152,7 @@ function CreateTaskFormFields() {
                 "rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                 priority === p.value
                   ? "bg-white/[0.1] text-white/80"
-                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
               )}
             >
               {p.label}
@@ -173,7 +175,7 @@ function CreateTaskFormFields() {
                 "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
                 assignee === name
                   ? "bg-white/[0.1] text-white/80"
-                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+                  : "text-white/30 hover:bg-white/[0.04] hover:text-white/50",
               )}
             >
               <span
@@ -181,7 +183,7 @@ function CreateTaskFormFields() {
                   "flex size-4 items-center justify-center rounded-full text-[9px]",
                   assignee === name
                     ? "bg-white/[0.12] text-white/70"
-                    : "bg-white/[0.06] text-white/30"
+                    : "bg-white/[0.06] text-white/30",
                 )}
               >
                 {name[0]}
@@ -193,9 +195,7 @@ function CreateTaskFormFields() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-[12px] text-white/40">
-          Labels
-        </label>
+        <label className="mb-1.5 block text-[12px] text-white/40">Labels</label>
         <div className="flex flex-wrap gap-1">
           {LABELS.map((label) => (
             <button
@@ -205,14 +205,14 @@ function CreateTaskFormFields() {
                 setSelectedLabels((prev) =>
                   prev.includes(label)
                     ? prev.filter((l) => l !== label)
-                    : [...prev, label]
+                    : [...prev, label],
                 )
               }
               className={cn(
                 "rounded-full px-2.5 py-0.5 font-mono text-[10px] capitalize transition-colors",
                 selectedLabels.includes(label)
                   ? "bg-white/[0.1] text-white/70"
-                  : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]"
+                  : "bg-white/[0.04] text-white/30 hover:bg-white/[0.06]",
               )}
             >
               {label}
