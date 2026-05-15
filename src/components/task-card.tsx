@@ -1,9 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cyclePriority, reassignTask } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
-import { ASSIGNEES, type Assignee, type Label, type Priority, type Status } from "@/lib/data";
+import {
+  ASSIGNEES,
+  type Assignee,
+  type Label,
+  type Priority,
+  type Status,
+} from "@/lib/data";
 
 const priorityDot: Record<Priority, string> = {
   high: "bg-red-400/50",
@@ -25,16 +31,17 @@ export function TaskCard({
   assignee: Assignee;
   status: Status;
 }) {
-  const router = useRouter();
-
   async function handlePriority(e: React.MouseEvent) {
+    e.preventDefault();
     e.stopPropagation();
     await cyclePriority(id);
   }
 
   async function handleAssignee(e: React.MouseEvent) {
+    e.preventDefault();
     e.stopPropagation();
-    const nextAssignee = ASSIGNEES[(ASSIGNEES.indexOf(assignee) + 1) % ASSIGNEES.length];
+    const nextAssignee =
+      ASSIGNEES[(ASSIGNEES.indexOf(assignee) + 1) % ASSIGNEES.length];
     await reassignTask(id, nextAssignee);
   }
 
@@ -43,23 +50,19 @@ export function TaskCard({
     e.dataTransfer.effectAllowed = "move";
   }
 
-  function handleCardClick() {
-    router.push(`/task/${id}`);
-  }
-
   return (
-    <div
+    <Link
+      href={`/task/${id}`}
       draggable
       onDragStart={handleDragStart}
-      onClick={handleCardClick}
-      className="group/card cursor-grab rounded-lg border border-white/[0.04] bg-white/[0.02] p-3 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] active:cursor-grabbing"
+      className="group/card block cursor-grab rounded-lg border border-white/[0.04] bg-white/[0.02] p-3 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] active:cursor-grabbing"
     >
       <div className="mb-2 flex items-center gap-2">
         <button
           onClick={handlePriority}
           className={cn(
             "size-2 shrink-0 cursor-pointer rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/10",
-            priorityDot[priority]
+            priorityDot[priority],
           )}
           title={`${priority} priority — click to cycle`}
         />
@@ -93,6 +96,6 @@ export function TaskCard({
           {assignee[0]}
         </button>
       </div>
-    </div>
+    </Link>
   );
 }
