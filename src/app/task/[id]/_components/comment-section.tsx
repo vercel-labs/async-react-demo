@@ -67,7 +67,5 @@ export async function CommentSection({ taskId }: { taskId: string }) {
 }
 
 export function CommentSectionSkeleton() {
-  return (
-    <Skeleton className="h-64 rounded-xl bg-white/[0.03]" />
-  );
+  return <Skeleton className="h-64 rounded-xl bg-white/[0.03]" />;
 }
