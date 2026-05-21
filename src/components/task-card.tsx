@@ -1,7 +1,8 @@
 "use client";
 
-import { startTransition, useOptimistic } from "react";
+import { useOptimistic, useTransition } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { cyclePriority } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import {
@@ -60,13 +61,18 @@ export function TaskCard({
   status: Status;
 }) {
   const [optimisticPriority, setOptimisticPriority] = useOptimistic(priority);
+  const [, startTransition] = useTransition();
 
   function handlePriority(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     startTransition(async () => {
       setOptimisticPriority((current) => PRIORITY_CYCLE[current]);
-      await cyclePriority(id);
+      try {
+        await cyclePriority(id);
+      } catch {
+        toast.error("Failed to update priority");
+      }
     });
   }
 

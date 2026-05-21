@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useOptimistic } from "react";
+import { useOptimistic, useTransition } from "react";
+import { toast } from "sonner";
 import { updateStatus } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import type { Status } from "@/lib/data";
@@ -33,12 +34,17 @@ export function StatusSelect({
   status: Status;
 }) {
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(status);
+  const [, startTransition] = useTransition();
 
   function handleStatus(newStatus: Status) {
     if (newStatus === optimisticStatus) return;
     startTransition(async () => {
       setOptimisticStatus(newStatus);
-      await updateStatus(taskId, newStatus);
+      try {
+        await updateStatus(taskId, newStatus);
+      } catch {
+        toast.error("Failed to update status");
+      }
     });
   }
 

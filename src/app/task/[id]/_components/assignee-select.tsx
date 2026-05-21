@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useOptimistic } from "react";
+import { useOptimistic, useTransition } from "react";
+import { toast } from "sonner";
 import { reassignTask } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee } from "@/lib/data";
@@ -13,12 +14,17 @@ export function AssigneeSelect({
   assignee: Assignee;
 }) {
   const [optimisticAssignee, setOptimisticAssignee] = useOptimistic(assignee);
+  const [, startTransition] = useTransition();
 
   function handleAssign(newAssignee: Assignee) {
     if (newAssignee === optimisticAssignee) return;
     startTransition(async () => {
       setOptimisticAssignee(newAssignee);
-      await reassignTask(taskId, newAssignee);
+      try {
+        await reassignTask(taskId, newAssignee);
+      } catch {
+        toast.error("Failed to reassign");
+      }
     });
   }
 

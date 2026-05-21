@@ -1,6 +1,7 @@
 "use client";
 
 import { useOptimistic } from "react";
+import { toast } from "sonner";
 import { cyclePriority } from "@/data/actions/task";
 import { PRIORITY_CYCLE } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -43,7 +44,11 @@ export function PriorityButton({
     <form
       action={async () => {
         setOptimisticPriority((current) => PRIORITY_CYCLE[current]);
-        await cyclePriority(taskId);
+        try {
+          await cyclePriority(taskId);
+        } catch {
+          toast.error("Failed to update priority");
+        }
       }}
     >
       <button
