@@ -19,11 +19,16 @@ The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch h
 
 | Where | What happens | How |
 |-------|-------------|-----|
+| Task detail page | Page shell paints immediately, sections stream in as data resolves | `<Suspense>` boundaries with promise-passing |
 | Drag-and-drop | Card moves to target column instantly, reverts on failure | `useOptimistic` with reducer + `startTransition` |
-| Task card controls | Priority and assignee update instantly on click | Multiple `useOptimistic` calls with updater functions |
+| Task card controls | Priority updates instantly on click | `useOptimistic` with updater function |
+| Label filter | Chip highlights immediately, board dims while filtered data loads | `useTransition` + `data-pending` + action props |
 | Create task modal | Button shows "Creating...", dialog closes with fresh board in one step | `useActionState` + key-based form reset + double `startTransition` |
 | Comment form | New comment appears immediately while server catches up | Form `action` + `useOptimistic` list add |
 | Delete button | Comment card fades to 30% opacity during deletion | `useOptimistic(false)` + `data-pending` CSS |
+| Repeat navigation | Cached reads and runtime prefetch make navigations instant | `'use cache'` + `cacheTag` + `updateTag` + `unstable_prefetch` |
+
+See the [Interactive Apps guide](https://nextjs.org/docs/app/guides/interactive-apps) for a step-by-step walkthrough.
 
 ## Setup
 
