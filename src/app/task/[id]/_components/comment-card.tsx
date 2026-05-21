@@ -37,11 +37,11 @@ export function CommentCard({
               <span className="text-[13px] font-medium text-white/90">
                 {comment.userName}
               </span>
-              <span className="font-mono text-[10px] text-white/35">
+              <span className="font-mono text-[10px] text-white/55">
                 <RelativeTime date={comment.createdAt} />
               </span>
               {pending && (
-                <span className="text-[10px] text-white/40">Sending...</span>
+                <span className="text-[10px] text-white/55">Sending...</span>
               )}
             </div>
             <p className="mt-0.5 text-[13px] leading-relaxed text-white/70">

@@ -36,8 +36,8 @@ export function ChipGroup({
         className={cn(
           "rounded-full border px-3 py-1 font-mono text-[11px] transition-all",
           optimisticValue === null
-            ? "border-white/[0.12] bg-white/[0.06] text-white"
-            : "border-transparent text-white/35 hover:text-white/55"
+            ? "border-white/20 bg-white/[0.1] text-white"
+            : "border-white/[0.06] text-white/60 hover:border-white/15 hover:text-white",
         )}
       >
         All
@@ -51,8 +51,8 @@ export function ChipGroup({
           className={cn(
             "rounded-full border px-3 py-1 font-mono text-[11px] transition-all",
             item.value === optimisticValue
-              ? "border-white/[0.12] bg-white/[0.06] text-white"
-              : "border-transparent text-white/35 hover:text-white/55"
+              ? "border-white/20 bg-white/[0.1] text-white"
+              : "border-white/[0.06] text-white/60 hover:border-white/15 hover:text-white",
           )}
         >
           {item.label}

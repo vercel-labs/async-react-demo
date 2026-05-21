@@ -30,7 +30,7 @@ export async function CommentSection({
         ))}
 
         {comments.length === 0 && (
-          <p className="py-10 text-center text-[13px] text-white/20">
+          <p className="py-10 text-center text-[13px] text-white/40">
             No comments yet
           </p>
         )}
@@ -40,7 +40,5 @@ export async function CommentSection({
 }
 
 export function CommentSectionSkeleton() {
-  return (
-    <Skeleton className="h-64 rounded-xl bg-white/[0.03]" />
-  );
+  return <Skeleton className="h-64 rounded-xl bg-white/[0.03]" />;
 }

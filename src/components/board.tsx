@@ -19,16 +19,19 @@ export function BoardSkeleton() {
       {["Todo", "In Progress", "Done"].map((title) => (
         <div
           key={title}
-          className="flex flex-col rounded-xl border border-white/[0.06] bg-white/[0.015]"
+          className="flex flex-col rounded-xl border border-white/10 bg-white/[0.025]"
         >
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-            <h2 className="text-[13px] font-medium text-white/60">{title}</h2>
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <h2 className="text-[13px] font-medium text-white">{title}</h2>
           </div>
-          <div className="flex flex-1 flex-col gap-1.5 p-2" style={{ minHeight: "120px" }}>
+          <div
+            className="flex flex-1 flex-col gap-1.5 p-2"
+            style={{ minHeight: "120px" }}
+          >
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-[72px] animate-pulse rounded-lg bg-white/[0.03]"
+                className="h-[72px] animate-pulse rounded-lg bg-white/[0.05]"
               />
             ))}
           </div>

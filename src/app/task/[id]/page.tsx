@@ -22,7 +22,7 @@ export default function TaskPage({
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <Link
         href="/"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/30 transition-colors hover:text-white/60"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white"
       >
         <ArrowLeft className="size-3.5" />
         Back

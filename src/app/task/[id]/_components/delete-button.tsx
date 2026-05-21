@@ -23,7 +23,7 @@ export function DeleteButton({
         type="submit"
         disabled={isPending}
         data-pending={isPending ? "" : undefined}
-        className="mt-0.5 rounded p-1 text-white/15 transition-colors hover:bg-white/[0.06] hover:text-white/40 disabled:opacity-50"
+        className="mt-0.5 rounded p-1 text-white/40 transition-colors hover:bg-white/[0.08] hover:text-red-300 disabled:opacity-50"
         aria-label="Delete comment"
       >
         <Trash2 className="size-3" />
