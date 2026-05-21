@@ -17,7 +17,7 @@ export default async function Home({
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Board</h1>
-          <p className="mt-1 text-sm text-white/40">
+          <p className="mt-1 text-sm text-white/60">
             <span className="font-mono text-xs">{allTasks.length}</span> tasks
             {label ? ` · ${label}` : ""}
           </p>

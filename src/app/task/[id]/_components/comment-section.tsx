@@ -38,7 +38,7 @@ export async function CommentSection({ taskId }: { taskId: string }) {
                     <span className="text-[13px] font-medium text-white/90">
                       {comment.userName}
                     </span>
-                    <span className="font-mono text-[10px] text-white/35">
+                    <span className="font-mono text-[10px] text-white/55">
                       <RelativeTime date={comment.createdAt} />
                     </span>
                   </div>

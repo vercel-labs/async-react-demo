@@ -25,16 +25,16 @@ export function AssigneeSelect({
           className={cn(
             "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[11px] transition-colors",
             assignee === name
-              ? "bg-white/[0.1] text-white/80"
-              : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+              ? "bg-white text-black hover:bg-white/90"
+              : "text-white/55 hover:bg-white/[0.08] hover:text-white",
           )}
         >
           <span
             className={cn(
               "flex size-4 items-center justify-center rounded-full text-[9px]",
               assignee === name
-                ? "bg-white/[0.12] text-white/70"
-                : "bg-white/[0.06] text-white/30"
+                ? "bg-black/15 text-black"
+                : "bg-white/[0.12] text-white/70",
             )}
           >
             {name[0]}

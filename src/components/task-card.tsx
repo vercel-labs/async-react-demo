@@ -1,21 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { cyclePriority, reassignTask } from "@/data/actions/task";
+import { cyclePriority } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
-import {
-  ASSIGNEES,
-  type Assignee,
-  type Label,
-  type Priority,
-  type Status,
-} from "@/lib/data";
+import type { Assignee, Label, Priority, Status } from "@/lib/data";
 
-const priorityDot: Record<Priority, string> = {
-  high: "bg-red-400/50",
-  medium: "bg-amber-300/30",
-  low: "bg-white/15",
+const priorityIcon: Record<Priority, { bars: number; color: string }> = {
+  low: { bars: 1, color: "text-white/40" },
+  medium: { bars: 2, color: "text-white/70" },
+  high: { bars: 3, color: "text-white" },
 };
+
+function PriorityBars({
+  level,
+  className,
+}: {
+  level: Priority;
+  className?: string;
+}) {
+  const { bars, color } = priorityIcon[level];
+  return (
+    <span
+      className={cn("inline-flex items-end gap-px", color, className)}
+      aria-label={`${level} priority`}
+    >
+      {[1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={cn(
+            "w-[3px] rounded-[1px]",
+            i === 1 ? "h-[6px]" : i === 2 ? "h-[9px]" : "h-[12px]",
+            i <= bars ? "bg-current" : "bg-current opacity-20",
+          )}
+        />
+      ))}
+    </span>
+  );
+}
 
 export function TaskCard({
   id,
@@ -37,14 +58,6 @@ export function TaskCard({
     await cyclePriority(id);
   }
 
-  async function handleAssignee(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const nextAssignee =
-      ASSIGNEES[(ASSIGNEES.indexOf(assignee) + 1) % ASSIGNEES.length];
-    await reassignTask(id, nextAssignee);
-  }
-
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.setData("text/plain", id);
     e.dataTransfer.effectAllowed = "move";
@@ -55,18 +68,17 @@ export function TaskCard({
       href={`/task/${id}`}
       draggable
       onDragStart={handleDragStart}
-      className="group/card block cursor-grab rounded-lg border border-white/[0.04] bg-white/[0.02] p-3 transition-all hover:border-white/[0.1] hover:bg-white/[0.04] active:cursor-grabbing"
+      className="group/card block cursor-default rounded-lg border border-white/[0.08] bg-white/[0.03] p-3 transition-all hover:border-white/20 hover:bg-white/[0.06]"
     >
       <div className="mb-2 flex items-center gap-2">
         <button
           onClick={handlePriority}
-          className={cn(
-            "size-2 shrink-0 cursor-pointer rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/10",
-            priorityDot[priority],
-          )}
+          className="shrink-0 cursor-pointer rounded-full p-1 transition-all hover:bg-white/10"
           title={`${priority} priority — click to cycle`}
-        />
-        <h3 className="flex-1 text-[13px] font-medium leading-snug text-white/80 group-hover/card:text-white">
+        >
+          <PriorityBars level={priority} />
+        </button>
+        <h3 className="flex-1 text-[13px] font-medium leading-snug text-white group-hover/card:text-white">
           {title}
         </h3>
       </div>
@@ -76,25 +88,24 @@ export function TaskCard({
           {labels.slice(0, 2).map((l) => (
             <span
               key={l}
-              className="rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] text-white/40"
+              className="rounded-full bg-white/[0.1] px-2 py-0.5 font-mono text-[10px] text-white/75"
             >
               {l}
             </span>
           ))}
           {labels.length > 2 && (
-            <span className="rounded-full bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] text-white/25">
+            <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 font-mono text-[10px] text-white/55">
               +{labels.length - 2}
             </span>
           )}
         </div>
 
-        <button
-          onClick={handleAssignee}
-          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] font-mono text-[10px] text-white/40 transition-colors hover:bg-white/[0.12] hover:text-white/60"
-          title={`${assignee} — click to reassign`}
+        <span
+          className="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/[0.12] font-mono text-[10px] text-white/80"
+          title={assignee}
         >
           {assignee[0]}
-        </button>
+        </span>
       </div>
     </Link>
   );

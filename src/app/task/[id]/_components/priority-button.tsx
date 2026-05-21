@@ -1,14 +1,29 @@
 "use client";
 
-import { ChevronUp } from "lucide-react";
 import { cyclePriority } from "@/data/actions/task";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";
 
-const priorityConfig: Record<Priority, { label: string; class: string }> = {
-  low: { label: "Low", class: "text-white/40 border-white/10" },
-  medium: { label: "Med", class: "text-amber-300/50 border-amber-300/15" },
-  high: { label: "High", class: "text-red-400/60 border-red-400/15" },
+const priorityConfig: Record<
+  Priority,
+  { label: string; bars: number; class: string }
+> = {
+  low: {
+    label: "Low",
+    bars: 1,
+    class:
+      "text-white/70 border-white/15 bg-white/[0.04] hover:bg-white/[0.08]",
+  },
+  medium: {
+    label: "Med",
+    bars: 2,
+    class: "text-white border-white/25 bg-white/[0.08] hover:bg-white/[0.14]",
+  },
+  high: {
+    label: "High",
+    bars: 3,
+    class: "text-black border-white bg-white hover:bg-white/90",
+  },
 };
 
 export function PriorityButton({
@@ -28,11 +43,22 @@ export function PriorityButton({
     <button
       onClick={handleCycle}
       className={cn(
-        "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors hover:bg-white/5",
-        config.class
+        "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors",
+        config.class,
       )}
     >
-      <ChevronUp className="size-3" />
+      <span className="inline-flex items-end gap-px">
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={cn(
+              "w-[3px] rounded-[1px]",
+              i === 1 ? "h-[5px]" : i === 2 ? "h-[7px]" : "h-[9px]",
+              i <= config.bars ? "bg-current" : "bg-current opacity-20",
+            )}
+          />
+        ))}
+      </span>
       {config.label}
     </button>
   );
