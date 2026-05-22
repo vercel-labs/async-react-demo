@@ -91,7 +91,7 @@ export function TaskCard({
       <div className="mb-2 flex items-center gap-2">
         <button
           onClick={handlePriority}
-          className="shrink-0 cursor-pointer rounded-full p-1 transition-all hover:bg-white/10"
+          className="shrink-0 cursor-pointer rounded-md p-1 transition-all hover:bg-white/10"
           title={`${optimisticPriority} priority — click to cycle`}
         >
           <PriorityBars level={optimisticPriority} />
