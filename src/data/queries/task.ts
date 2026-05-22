@@ -13,16 +13,14 @@ export const getTasks = cache(async (label?: string) => {
   return filtered.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }));
 });
 
-export const getTasksByStatus = cache(
-  async (status: Status, label?: Label) => {
-    await delay(400);
-    let filtered = tasks.filter((t) => t.status === status);
-    if (label) {
-      filtered = filtered.filter((t) => t.labels.includes(label));
-    }
-    return filtered;
-  },
-);
+export const getTasksByStatus = cache(async (status: Status, label?: Label) => {
+  await delay(400);
+  let filtered = tasks.filter((t) => t.status === status);
+  if (label) {
+    filtered = filtered.filter((t) => t.labels.includes(label));
+  }
+  return filtered;
+});
 
 export const getTask = cache(async (id: string) => {
   await delay(300);
