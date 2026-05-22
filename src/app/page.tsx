@@ -2,7 +2,6 @@ import { Board } from "@/components/board";
 import { LabelFilter } from "@/components/label-filter";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { getTasks } from "@/data/queries/task";
-import type { Label } from "@/lib/data";
 
 export default async function Home({
   searchParams,
@@ -10,7 +9,7 @@ export default async function Home({
   searchParams: Promise<{ label?: string }>;
 }) {
   const { label } = await searchParams;
-  const allTasks = await getTasks(label as Label | undefined);
+  const allTasks = await getTasks(label);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -28,7 +27,7 @@ export default async function Home({
         </div>
       </div>
 
-      <Board label={label as Label | undefined} />
+      <Board label={label} />
     </div>
   );
 }

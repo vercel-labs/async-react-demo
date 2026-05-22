@@ -1,16 +1,16 @@
 import "server-only";
 
 import { cache } from "react";
-import { tasks, type Label, type Status } from "@/lib/data";
+import { tasks, LABELS, type Label, type Status } from "@/lib/data";
 import { delay } from "@/lib/utils";
 
-export const getTasks = cache(async (label?: Label) => {
+export const getTasks = cache(async (label?: string) => {
   await delay(400);
   let filtered = tasks;
-  if (label) {
-    filtered = filtered.filter((t) => t.labels.includes(label));
+  if (label && LABELS.includes(label as Label)) {
+    filtered = filtered.filter((t) => t.labels.includes(label as Label));
   }
-  return filtered;
+  return filtered.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }));
 });
 
 export const getTasksByStatus = cache(
