@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Board } from "@/components/board";
+import { Board, BoardSkeleton } from "@/components/board";
 import { LabelFilter, LabelFilterSkeleton } from "@/components/label-filter";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { getTasks } from "@/data/queries/task";
@@ -31,7 +31,7 @@ export default function Home({
       </div>
 
       <div className="group-has-data-pending:opacity-50 transition-opacity">
-        <Suspense>
+        <Suspense fallback={<BoardSkeleton />}>
           {searchParams.then(({ label }) => (
             <Board label={label} />
           ))}

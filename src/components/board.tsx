@@ -14,7 +14,7 @@ export function Board({ label }: { label?: string }) {
   );
 }
 
-function BoardSkeleton() {
+export function BoardSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {["Todo", "In Progress", "Done"].map((title) => (
