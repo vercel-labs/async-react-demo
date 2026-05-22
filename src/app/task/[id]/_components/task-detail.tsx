@@ -3,14 +3,10 @@ import { StatusSelect } from "./status-select";
 import { AssigneeSelect } from "./assignee-select";
 import { PriorityButton } from "./priority-button";
 import { RelativeTime } from "@/components/relative-time";
-import type { Task } from "@/lib/data";
+import { getTask } from "@/data/queries/task";
 
-export async function TaskDetail({
-  taskPromise,
-}: {
-  taskPromise: Promise<Task | null>;
-}) {
-  const task = await taskPromise;
+export async function TaskDetail({ id }: { id: string }) {
+  const task = await getTask(id);
 
   if (!task) notFound();
 

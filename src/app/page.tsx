@@ -1,9 +1,8 @@
 import { Suspense } from "react";
-import { Board, BoardSkeleton } from "@/components/board";
+import { Board } from "@/components/board";
 import { LabelFilter } from "@/components/label-filter";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { getTasks } from "@/data/queries/task";
-import type { Label } from "@/lib/data";
 
 export const unstable_prefetch = "force-runtime";
 
@@ -32,8 +31,10 @@ export default function Home({
       </div>
 
       <div className="group-has-data-pending:opacity-50 transition-opacity">
-        <Suspense fallback={<BoardSkeleton />}>
-          <BoardWithParams searchParams={searchParams} />
+        <Suspense>
+          {searchParams.then(({ label }) => (
+            <Board label={label} />
+          ))}
         </Suspense>
       </div>
     </div>
@@ -46,20 +47,11 @@ async function TaskCount({
   searchParams: Promise<{ label?: string }>;
 }) {
   const { label } = await searchParams;
-  const allTasks = await getTasks(label as Label | undefined);
+  const allTasks = await getTasks(label);
   return (
     <>
       <span className="font-mono text-xs">{allTasks.length}</span> tasks
       {label ? ` · ${label}` : ""}
     </>
   );
-}
-
-async function BoardWithParams({
-  searchParams,
-}: {
-  searchParams: Promise<{ label?: string }>;
-}) {
-  const { label } = await searchParams;
-  return <Board label={label as Label | undefined} />;
 }

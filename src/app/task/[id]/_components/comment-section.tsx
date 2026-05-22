@@ -4,12 +4,7 @@ import { CommentCard } from "./comment-card";
 import { OptimisticComments } from "./optimistic-comments";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export async function CommentSection({
-  taskIdPromise,
-}: {
-  taskIdPromise: Promise<string>;
-}) {
-  const taskId = await taskIdPromise;
+export async function CommentSection({ taskId }: { taskId: string }) {
   const comments = await getComments(taskId);
 
   return (

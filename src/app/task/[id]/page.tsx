@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getTask } from "@/data/queries/task";
 import { TaskDetail, TaskDetailSkeleton } from "./_components/task-detail";
 import {
   CommentSection,
@@ -15,9 +14,6 @@ export default function TaskPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const taskPromise = params.then(({ id }) => getTask(id));
-  const taskIdPromise = params.then(({ id }) => id);
-
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <Link
@@ -29,13 +25,19 @@ export default function TaskPage({
       </Link>
 
       <Suspense fallback={<TaskDetailSkeleton />}>
-        <TaskDetail taskPromise={taskPromise} />
-      </Suspense>
+        {params.then(({ id }) => (
+          <>
+            <TaskDetail id={id} />
 
-      <h3 className="mb-4 text-[13px] font-medium text-white/60">Discussion</h3>
+            <h3 className="mb-4 text-[13px] font-medium text-white/60">
+              Discussion
+            </h3>
 
-      <Suspense fallback={<CommentSectionSkeleton />}>
-        <CommentSection taskIdPromise={taskIdPromise} />
+            <Suspense fallback={<CommentSectionSkeleton />}>
+              <CommentSection taskId={id} />
+            </Suspense>
+          </>
+        ))}
       </Suspense>
     </div>
   );
