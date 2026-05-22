@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Board } from "@/components/board";
-import { LabelFilter } from "@/components/label-filter";
+import { LabelFilter, LabelFilterSkeleton } from "@/components/label-filter";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { getTasks } from "@/data/queries/task";
 
@@ -23,7 +23,7 @@ export default function Home({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Suspense>
+          <Suspense fallback={<LabelFilterSkeleton />}>
             <LabelFilter />
           </Suspense>
           <CreateTaskModal />

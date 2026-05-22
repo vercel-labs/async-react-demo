@@ -37,3 +37,9 @@ export function LabelFilter() {
     </div>
   );
 }
+
+export function LabelFilterSkeleton() {
+  return (
+    <div className="h-[30px] w-16 animate-pulse rounded-full bg-white/[0.06]" />
+  );
+}
