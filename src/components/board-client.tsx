@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useOptimistic, useState } from "react";
+import { toast } from "sonner";
 import { updateStatus } from "@/data/actions/task";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,11 @@ export function BoardClient({ tasks }: { tasks: SerializedTask[] }) {
     startTransition(async () => {
       moveTask({ taskId, status: targetStatus });
       setDragOverColumn(null);
-      await updateStatus(taskId, targetStatus);
+      try {
+        await updateStatus(taskId, targetStatus);
+      } catch {
+        toast.error("Failed to move task");
+      }
     });
   }
 
