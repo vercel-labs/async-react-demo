@@ -3,11 +3,7 @@
 import { z } from "zod/v4";
 import { updateTag } from "next/cache";
 import type { Comment } from "@/lib/data";
-import {
-  getNextCommentId,
-  insertComment,
-  deleteCommentById,
-} from "@/lib/db";
+import { getNextCommentId, insertComment, deleteCommentById } from "@/lib/db";
 import { delay } from "@/lib/utils";
 
 const DEFAULT_USER = "You";

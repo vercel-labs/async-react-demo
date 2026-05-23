@@ -44,7 +44,7 @@ pnpm run dev
 - Tailwind CSS 4
 - shadcn/ui
 - Geist Sans + Mono fonts
-- In-memory data store with simulated delays
+- SQLite data store (auto-seeds on first run) with simulated delays
 
 ## Credits
 
