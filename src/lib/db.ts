@@ -1,10 +1,11 @@
 import "server-only";
 
 import Database from "better-sqlite3";
+import os from "os";
 import path from "path";
 import type { Task, Comment, Status, Priority, Label, Assignee } from "./data";
 
-const DB_PATH = path.join(process.cwd(), "data.db");
+const DB_PATH = path.join(os.tmpdir(), "data.db");
 
 function getDb() {
   const db = new Database(DB_PATH);
