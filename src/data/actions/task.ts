@@ -3,12 +3,6 @@
 import { z } from "zod/v4";
 import { updateTag } from "next/cache";
 import {
-  getNextTaskId,
-  insertTask,
-  getTaskById,
-  updateTaskStatus,
-  updateTaskPriority,
-  updateTaskAssignee,
   ASSIGNEES,
   LABELS,
   PRIORITY_CYCLE,
@@ -17,6 +11,14 @@ import {
   type Priority,
   type Status,
 } from "@/lib/data";
+import {
+  getNextTaskId,
+  insertTask,
+  getTaskById,
+  updateTaskStatus,
+  updateTaskPriority,
+  updateTaskAssignee,
+} from "@/lib/db";
 import { delay } from "@/lib/utils";
 
 const createTaskSchema = z.object({

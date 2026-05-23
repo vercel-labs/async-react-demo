@@ -2,7 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { cacheTag } from "next/cache";
-import { getCommentsByTaskId } from "@/lib/data";
+import { getCommentsByTaskId } from "@/lib/db";
 import { delay } from "@/lib/utils";
 
 export const getComments = cache(async (taskId: string) => {

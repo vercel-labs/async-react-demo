@@ -2,15 +2,13 @@ import "server-only";
 
 import { cache } from "react";
 import { cacheTag } from "next/cache";
+import { LABELS, type Label, type Status } from "@/lib/data";
 import {
   getAllTasks,
   getTasksByLabel,
   getTasksByStatusAndLabel,
   getTaskById as getTaskByIdFromDb,
-  LABELS,
-  type Label,
-  type Status,
-} from "@/lib/data";
+} from "@/lib/db";
 import { delay } from "@/lib/utils";
 
 export const getTasks = cache(async (label?: string) => {
