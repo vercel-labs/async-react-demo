@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useOptimistic, useState } from "react";
+import { startTransition, use, useOptimistic, useState } from "react";
 import { toast } from "sonner";
 import { updateStatus } from "@/data/actions/task";
 import { TaskCard } from "./task-card";
@@ -24,7 +24,12 @@ const columns: { status: Status; title: string; dot: string }[] = [
   { status: "done", title: "Done", dot: "bg-emerald-400" },
 ];
 
-export function BoardClient({ tasks }: { tasks: SerializedTask[] }) {
+export function Board({
+  tasksPromise,
+}: {
+  tasksPromise: Promise<SerializedTask[]>;
+}) {
+  const tasks = use(tasksPromise);
   const [optimisticTasks, moveTask] = useOptimistic(
     tasks,
     (currentTasks, action: { taskId: string; status: Status }) =>
@@ -116,6 +121,41 @@ export function BoardClient({ tasks }: { tasks: SerializedTask[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+const skeletonColumns = [
+  { title: "Todo", dot: "bg-blue-400" },
+  { title: "In Progress", dot: "bg-amber-400" },
+  { title: "Done", dot: "bg-emerald-400" },
+];
+
+export function BoardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {skeletonColumns.map((col) => (
+        <div
+          key={col.title}
+          className="flex flex-col rounded-xl border border-white/10 bg-white/[0.025]"
+        >
+          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+            <span className={cn("size-2 rounded-full", col.dot)} />
+            <h2 className="text-[13px] font-medium text-white">{col.title}</h2>
+          </div>
+          <div
+            className="flex flex-1 flex-col gap-1.5 p-2"
+            style={{ minHeight: "120px" }}
+          >
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-[72px] animate-pulse rounded-lg bg-white/[0.05]"
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

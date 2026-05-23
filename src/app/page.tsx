@@ -33,7 +33,7 @@ export default function Home({
       <div className="group-has-data-pending:opacity-50 transition-opacity">
         <Suspense fallback={<BoardSkeleton />}>
           {searchParams.then(({ label }) => (
-            <Board label={label} />
+            <Board tasksPromise={getTasks(label)} />
           ))}
         </Suspense>
       </div>
