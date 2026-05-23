@@ -2,14 +2,20 @@ import "server-only";
 
 import { cache } from "react";
 import { LABELS, type Label, type Status } from "@/lib/data";
-import { getAllTasks, getTasksByLabel, getTasksByStatusAndLabel, getTaskById as getTaskByIdFromDb } from "@/lib/db";
+import {
+  getAllTasks,
+  getTasksByLabel,
+  getTasksByStatusAndLabel,
+  getTaskById as getTaskByIdFromDb,
+} from "@/lib/db";
 import { delay } from "@/lib/utils";
 
 export const getTasks = cache(async (label?: string) => {
   await delay(400);
-  const filtered = label && LABELS.includes(label as Label)
-    ? getTasksByLabel(label)
-    : getAllTasks();
+  const filtered =
+    label && LABELS.includes(label as Label)
+      ? getTasksByLabel(label)
+      : getAllTasks();
   return filtered.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }));
 });
 

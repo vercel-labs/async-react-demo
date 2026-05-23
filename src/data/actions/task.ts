@@ -55,9 +55,7 @@ export async function createTask(data: {
   return { success: true as const, task };
 }
 
-export async function cyclePriority(
-  taskId: string,
-): Promise<Priority | null> {
+export async function cyclePriority(taskId: string): Promise<Priority | null> {
   await delay(500);
   const task = getTaskById(taskId);
   if (!task) return null;
