@@ -3,8 +3,6 @@
 import { z } from "zod/v4";
 import { refresh } from "next/cache";
 import {
-  tasks,
-  getNextTaskId,
   ASSIGNEES,
   LABELS,
   PRIORITY_CYCLE,
@@ -13,6 +11,14 @@ import {
   type Priority,
   type Status,
 } from "@/lib/data";
+import {
+  getNextTaskId,
+  insertTask,
+  getTaskById,
+  updateTaskStatus,
+  updateTaskPriority,
+  updateTaskAssignee,
+} from "@/lib/db";
 import { delay } from "@/lib/utils";
 
 const createTaskSchema = z.object({
@@ -44,7 +50,7 @@ export async function createTask(data: {
     ...parsed.data,
     createdAt: new Date(),
   };
-  tasks.unshift(task);
+  insertTask(task);
   refresh();
   return { success: true as const, task };
 }
@@ -53,11 +59,12 @@ export async function cyclePriority(
   taskId: string,
 ): Promise<Priority | null> {
   await delay(500);
-  const task = tasks.find((t) => t.id === taskId);
+  const task = getTaskById(taskId);
   if (!task) return null;
-  task.priority = PRIORITY_CYCLE[task.priority];
+  const newPriority = PRIORITY_CYCLE[task.priority];
+  updateTaskPriority(taskId, newPriority);
   refresh();
-  return task.priority;
+  return newPriority;
 }
 
 export async function updateStatus(
@@ -65,11 +72,10 @@ export async function updateStatus(
   newStatus: Status,
 ): Promise<Status | null> {
   await delay(500);
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task) return null;
-  task.status = newStatus;
+  const updated = updateTaskStatus(taskId, newStatus);
+  if (!updated) return null;
   refresh();
-  return task.status;
+  return newStatus;
 }
 
 export async function reassignTask(
@@ -77,10 +83,9 @@ export async function reassignTask(
   newAssignee: string,
 ): Promise<Assignee | null> {
   await delay(500);
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task) return null;
   if (!ASSIGNEES.includes(newAssignee as Assignee)) return null;
-  task.assignee = newAssignee as Assignee;
+  const updated = updateTaskAssignee(taskId, newAssignee as Assignee);
+  if (!updated) return null;
   refresh();
-  return task.assignee;
+  return newAssignee as Assignee;
 }

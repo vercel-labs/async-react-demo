@@ -2,7 +2,8 @@
 
 import { z } from "zod/v4";
 import { refresh } from "next/cache";
-import { comments, getNextCommentId, type Comment } from "@/lib/data";
+import type { Comment } from "@/lib/data";
+import { getNextCommentId, insertComment, deleteCommentById } from "@/lib/db";
 import { delay } from "@/lib/utils";
 
 const DEFAULT_USER = "You";
@@ -28,7 +29,7 @@ export async function addComment(
     content: parsed.data.content.trim(),
     createdAt: new Date(),
   };
-  comments.push(comment);
+  insertComment(comment);
   refresh();
   return comment;
 }
@@ -36,11 +37,6 @@ export async function addComment(
 export async function deleteComment(commentId: string) {
   await delay(500);
 
-  const idx = comments.findIndex(
-    (c) => c.id === commentId && c.userName === DEFAULT_USER,
-  );
-  if (idx >= 0) {
-    comments.splice(idx, 1);
-  }
+  deleteCommentById(commentId, DEFAULT_USER);
   refresh();
 }
