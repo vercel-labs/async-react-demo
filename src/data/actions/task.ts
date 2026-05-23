@@ -3,8 +3,12 @@
 import { z } from "zod/v4";
 import { updateTag } from "next/cache";
 import {
-  tasks,
   getNextTaskId,
+  insertTask,
+  getTaskById,
+  updateTaskStatus,
+  updateTaskPriority,
+  updateTaskAssignee,
   ASSIGNEES,
   LABELS,
   PRIORITY_CYCLE,
@@ -44,19 +48,20 @@ export async function createTask(data: {
     ...parsed.data,
     createdAt: new Date(),
   };
-  tasks.unshift(task);
+  insertTask(task);
   updateTag("tasks");
   return { success: true as const, task };
 }
 
 export async function cyclePriority(taskId: string): Promise<Priority | null> {
   await delay(500);
-  const task = tasks.find((t) => t.id === taskId);
+  const task = getTaskById(taskId);
   if (!task) return null;
-  task.priority = PRIORITY_CYCLE[task.priority];
+  const newPriority = PRIORITY_CYCLE[task.priority];
+  updateTaskPriority(taskId, newPriority);
   updateTag("tasks");
   updateTag(`task-${taskId}`);
-  return task.priority;
+  return newPriority;
 }
 
 export async function updateStatus(
@@ -64,12 +69,11 @@ export async function updateStatus(
   newStatus: Status,
 ): Promise<Status | null> {
   await delay(500);
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task) return null;
-  task.status = newStatus;
+  const updated = updateTaskStatus(taskId, newStatus);
+  if (!updated) return null;
   updateTag("tasks");
   updateTag(`task-${taskId}`);
-  return task.status;
+  return newStatus;
 }
 
 export async function reassignTask(
@@ -77,11 +81,10 @@ export async function reassignTask(
   newAssignee: string,
 ): Promise<Assignee | null> {
   await delay(500);
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task) return null;
   if (!ASSIGNEES.includes(newAssignee as Assignee)) return null;
-  task.assignee = newAssignee as Assignee;
+  const updated = updateTaskAssignee(taskId, newAssignee as Assignee);
+  if (!updated) return null;
   updateTag("tasks");
   updateTag(`task-${taskId}`);
-  return task.assignee;
+  return newAssignee as Assignee;
 }

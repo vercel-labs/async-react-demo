@@ -2,7 +2,7 @@
 
 import { z } from "zod/v4";
 import { updateTag } from "next/cache";
-import { comments, getNextCommentId, type Comment } from "@/lib/data";
+import { getNextCommentId, insertComment, deleteCommentById, type Comment } from "@/lib/data";
 import { delay } from "@/lib/utils";
 
 const DEFAULT_USER = "You";
@@ -28,7 +28,7 @@ export async function addComment(
     content: parsed.data.content.trim(),
     createdAt: new Date(),
   };
-  comments.push(comment);
+  insertComment(comment);
   updateTag(`comments-${taskId}`);
   return comment;
 }
@@ -36,12 +36,8 @@ export async function addComment(
 export async function deleteComment(commentId: string) {
   await delay(500);
 
-  const idx = comments.findIndex(
-    (c) => c.id === commentId && c.userName === DEFAULT_USER,
-  );
-  if (idx >= 0) {
-    const taskId = comments[idx].taskId;
-    comments.splice(idx, 1);
+  const taskId = deleteCommentById(commentId, DEFAULT_USER);
+  if (taskId) {
     updateTag(`comments-${taskId}`);
   }
 }
