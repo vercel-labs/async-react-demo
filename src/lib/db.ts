@@ -51,12 +51,12 @@ function seed(db: Database.Database) {
   const day = 24 * hour;
 
   const insertTask = db.prepare(`
-    INSERT INTO tasks (id, title, description, status, priority, labels, assignee, created_at)
+    INSERT OR IGNORE INTO tasks (id, title, description, status, priority, labels, assignee, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertComment = db.prepare(`
-    INSERT INTO comments (id, task_id, user_name, content, created_at)
+    INSERT OR IGNORE INTO comments (id, task_id, user_name, content, created_at)
     VALUES (?, ?, ?, ?, ?)
   `);
 
@@ -311,7 +311,7 @@ function rowToComment(row: CommentRow): Comment {
 
 export function getAllTasks(): Task[] {
   const rows = db
-    .prepare("SELECT * FROM tasks ORDER BY created_at DESC")
+    .prepare("SELECT * FROM tasks ORDER BY created_at DESC, id ASC")
     .all() as TaskRow[];
   return rows.map(rowToTask);
 }
@@ -330,20 +330,20 @@ export function getTasksByStatusAndLabel(
   if (label) {
     const rows = db
       .prepare(
-        "SELECT * FROM tasks WHERE status = ? AND labels LIKE ? ORDER BY created_at DESC",
+        "SELECT * FROM tasks WHERE status = ? AND labels LIKE ? ORDER BY created_at DESC, id ASC",
       )
       .all(status, `%"${label}"%`) as TaskRow[];
     return rows.map(rowToTask);
   }
   const rows = db
-    .prepare("SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC")
+    .prepare("SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC, id ASC")
     .all(status) as TaskRow[];
   return rows.map(rowToTask);
 }
 
 export function getTasksByLabel(label: string): Task[] {
   const rows = db
-    .prepare("SELECT * FROM tasks WHERE labels LIKE ? ORDER BY created_at DESC")
+    .prepare("SELECT * FROM tasks WHERE labels LIKE ? ORDER BY created_at DESC, id ASC")
     .all(`%"${label}"%`) as TaskRow[];
   return rows.map(rowToTask);
 }
