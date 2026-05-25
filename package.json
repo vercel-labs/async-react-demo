@@ -4,18 +4,24 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:push": "prisma db push",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
-    "better-sqlite3": "^12.10.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "geist": "^1.7.0",
     "lucide-react": "^1.8.0",
     "next": "16.3.0-canary.24",
+    "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
@@ -27,13 +33,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.0-canary.20",
     "tailwindcss": "^4",
+    "tsx": "^4.22.3",
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.33.0",
@@ -48,7 +55,9 @@
     },
     "ignoredBuiltDependencies": [],
     "onlyBuiltDependencies": [
-      "better-sqlite3"
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
     ]
   }
 }

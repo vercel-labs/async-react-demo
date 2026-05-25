@@ -23,13 +23,13 @@ export async function addComment(
   await delay(800);
 
   const comment: Comment = {
-    id: getNextCommentId(),
+    id: await getNextCommentId(),
     taskId: parsed.data.taskId,
     userName: DEFAULT_USER,
     content: parsed.data.content.trim(),
     createdAt: new Date(),
   };
-  insertComment(comment);
+  await insertComment(comment);
   updateTag(`comments-${taskId}`);
   return comment;
 }
@@ -37,7 +37,7 @@ export async function addComment(
 export async function deleteComment(commentId: string) {
   await delay(500);
 
-  const taskId = deleteCommentById(commentId, DEFAULT_USER);
+  const taskId = await deleteCommentById(commentId, DEFAULT_USER);
   if (taskId) {
     updateTag(`comments-${taskId}`);
   }

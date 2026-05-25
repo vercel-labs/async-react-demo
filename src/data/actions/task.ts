@@ -46,21 +46,21 @@ export async function createTask(data: {
   }
 
   const task = {
-    id: getNextTaskId(),
+    id: await getNextTaskId(),
     ...parsed.data,
     createdAt: new Date(),
   };
-  insertTask(task);
+  await insertTask(task);
   updateTag("tasks");
   return { success: true as const, task };
 }
 
 export async function cyclePriority(taskId: string): Promise<Priority | null> {
   await delay(500);
-  const task = getTaskById(taskId);
+  const task = await getTaskById(taskId);
   if (!task) return null;
   const newPriority = PRIORITY_CYCLE[task.priority];
-  updateTaskPriority(taskId, newPriority);
+  await updateTaskPriority(taskId, newPriority);
   updateTag("tasks");
   updateTag(`task-${taskId}`);
   return newPriority;
@@ -71,7 +71,7 @@ export async function updateStatus(
   newStatus: Status,
 ): Promise<Status | null> {
   await delay(500);
-  const updated = updateTaskStatus(taskId, newStatus);
+  const updated = await updateTaskStatus(taskId, newStatus);
   if (!updated) return null;
   updateTag("tasks");
   updateTag(`task-${taskId}`);
@@ -84,7 +84,7 @@ export async function reassignTask(
 ): Promise<Assignee | null> {
   await delay(500);
   if (!ASSIGNEES.includes(newAssignee as Assignee)) return null;
-  const updated = updateTaskAssignee(taskId, newAssignee as Assignee);
+  const updated = await updateTaskAssignee(taskId, newAssignee as Assignee);
   if (!updated) return null;
   updateTag("tasks");
   updateTag(`task-${taskId}`);

@@ -18,8 +18,8 @@ export const getTasks = cache(async (label?: string) => {
   await delay(400);
   const filtered =
     label && LABELS.includes(label as Label)
-      ? getTasksByLabel(label)
-      : getAllTasks();
+      ? await getTasksByLabel(label)
+      : await getAllTasks();
   return filtered.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }));
 });
 
