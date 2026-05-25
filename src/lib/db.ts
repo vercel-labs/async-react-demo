@@ -10,6 +10,7 @@ const DB_PATH = path.join(os.tmpdir(), "data.db");
 function getDb() {
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
+  db.pragma("busy_timeout = 5000");
   db.pragma("foreign_keys = ON");
 
   db.exec(`
@@ -310,7 +311,7 @@ function rowToComment(row: CommentRow): Comment {
 
 export function getAllTasks(): Task[] {
   const rows = db
-    .prepare("SELECT * FROM tasks ORDER BY created_at DESC")
+    .prepare("SELECT * FROM tasks ORDER BY created_at DESC, id ASC")
     .all() as TaskRow[];
   return rows.map(rowToTask);
 }
@@ -329,20 +330,20 @@ export function getTasksByStatusAndLabel(
   if (label) {
     const rows = db
       .prepare(
-        "SELECT * FROM tasks WHERE status = ? AND labels LIKE ? ORDER BY created_at DESC",
+        "SELECT * FROM tasks WHERE status = ? AND labels LIKE ? ORDER BY created_at DESC, id ASC",
       )
       .all(status, `%"${label}"%`) as TaskRow[];
     return rows.map(rowToTask);
   }
   const rows = db
-    .prepare("SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC")
+    .prepare("SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC, id ASC")
     .all(status) as TaskRow[];
   return rows.map(rowToTask);
 }
 
 export function getTasksByLabel(label: string): Task[] {
   const rows = db
-    .prepare("SELECT * FROM tasks WHERE labels LIKE ? ORDER BY created_at DESC")
+    .prepare("SELECT * FROM tasks WHERE labels LIKE ? ORDER BY created_at DESC, id ASC")
     .all(`%"${label}"%`) as TaskRow[];
   return rows.map(rowToTask);
 }
