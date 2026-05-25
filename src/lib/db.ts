@@ -336,14 +336,18 @@ export function getTasksByStatusAndLabel(
     return rows.map(rowToTask);
   }
   const rows = db
-    .prepare("SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC, id ASC")
+    .prepare(
+      "SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC, id ASC",
+    )
     .all(status) as TaskRow[];
   return rows.map(rowToTask);
 }
 
 export function getTasksByLabel(label: string): Task[] {
   const rows = db
-    .prepare("SELECT * FROM tasks WHERE labels LIKE ? ORDER BY created_at DESC, id ASC")
+    .prepare(
+      "SELECT * FROM tasks WHERE labels LIKE ? ORDER BY created_at DESC, id ASC",
+    )
     .all(`%"${label}"%`) as TaskRow[];
   return rows.map(rowToTask);
 }
