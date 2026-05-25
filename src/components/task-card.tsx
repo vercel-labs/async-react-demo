@@ -67,7 +67,7 @@ export function TaskCard({
     e.preventDefault();
     e.stopPropagation();
     startTransition(async () => {
-      setOptimisticPriority((current) => PRIORITY_CYCLE[current]);
+      setOptimisticPriority(PRIORITY_CYCLE[optimisticPriority]);
       try {
         await cyclePriority(id);
       } catch {
