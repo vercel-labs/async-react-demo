@@ -10,6 +10,7 @@ const DB_PATH = path.join(os.tmpdir(), "data.db");
 function getDb() {
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
+  db.pragma("busy_timeout = 5000");
   db.pragma("foreign_keys = ON");
 
   db.exec(`
