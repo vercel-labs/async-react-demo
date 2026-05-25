@@ -2,14 +2,7 @@ import "server-only";
 
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import type {
-  Task,
-  Comment,
-  Status,
-  Priority,
-  Label,
-  Assignee,
-} from "./data";
+import type { Task, Comment, Status, Priority, Label, Assignee } from "./data";
 
 const globalForPrisma = globalThis as unknown as { __prisma?: PrismaClient };
 if (!globalForPrisma.__prisma) {
@@ -55,6 +48,8 @@ function rowToComment(row: {
     createdAt: row.createdAt,
   };
 }
+
+// --- Query functions ---
 
 export async function getAllTasks(): Promise<Task[]> {
   const rows = await prisma.task.findMany({
@@ -140,9 +135,7 @@ export async function updateTaskAssignee(
   return result.count > 0;
 }
 
-export async function getCommentsByTaskId(
-  taskId: string,
-): Promise<Comment[]> {
+export async function getCommentsByTaskId(taskId: string): Promise<Comment[]> {
   const rows = await prisma.comment.findMany({
     where: { taskId },
     orderBy: { createdAt: "desc" },
