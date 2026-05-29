@@ -169,20 +169,14 @@ export async function deleteCommentById(
 }
 
 export async function getNextTaskId(): Promise<string> {
-  const last = await prisma.task.findFirst({
-    orderBy: { id: "desc" },
-    select: { id: true },
-  });
-  const maxId = last ? parseInt(last.id, 10) : 0;
-  return String((isNaN(maxId) ? 0 : maxId) + 1);
+  // Use timestamp + random suffix to avoid race condition collisions
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return `${ts}-${rand}`;
 }
 
 export async function getNextCommentId(): Promise<string> {
-  const last = await prisma.comment.findFirst({
-    orderBy: { id: "desc" },
-    select: { id: true },
-  });
-  if (!last) return "c1";
-  const num = parseInt(last.id.slice(1), 10);
-  return `c${(isNaN(num) ? 0 : num) + 1}`;
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return `c${ts}-${rand}`;
 }
