@@ -17,11 +17,13 @@ export function ChipGroup({
   onChange,
 }: ChipGroupProps) {
   const [optimisticValue, setOptimisticValue] = useOptimistic(value);
+  const [isPending, setIsPending] = useOptimistic(false);
 
   function handleClick(newValue: string | null) {
     if (changeAction) {
       startTransition(async () => {
         setOptimisticValue(newValue);
+        setIsPending(true);
         await changeAction(newValue);
       });
     } else {
@@ -30,7 +32,10 @@ export function ChipGroup({
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div
+      className="flex flex-wrap gap-1.5"
+      data-pending={isPending ? "" : undefined}
+    >
       <button
         onClick={() => handleClick(null)}
         className={cn(

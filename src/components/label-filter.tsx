@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
 import { ChipGroup } from "./design/chip-group";
 
 const labels = [
@@ -16,7 +15,6 @@ const labels = [
 export function LabelFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
   const current = searchParams.get("label") ?? null;
 
   function filterAction(value: string | null) {
@@ -26,15 +24,11 @@ export function LabelFilter() {
     } else {
       params.delete("label");
     }
-    startTransition(() => {
-      router.push(`/?${params.toString()}`);
-    });
+    router.push(`/?${params.toString()}`);
   }
 
   return (
-    <div data-pending={isPending ? "" : undefined}>
-      <ChipGroup items={labels} value={current} changeAction={filterAction} />
-    </div>
+    <ChipGroup items={labels} value={current} changeAction={filterAction} />
   );
 }
 
