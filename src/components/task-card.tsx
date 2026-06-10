@@ -84,6 +84,7 @@ export function TaskCard({
   return (
     <Link
       href={`/task/${id}`}
+      prefetch={true}
       draggable
       onDragStart={handleDragStart}
       className="group/card block cursor-default rounded-lg border border-white/[0.08] bg-white/[0.03] p-3 transition-all hover:border-white/20 hover:bg-white/[0.06]"

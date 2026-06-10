@@ -19,6 +19,7 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
+          prefetch={true}
           className="flex items-center gap-2.5 font-sans text-[15px] font-semibold tracking-tight text-white"
         >
           <div className="flex size-6 items-center justify-center rounded-md bg-white">
