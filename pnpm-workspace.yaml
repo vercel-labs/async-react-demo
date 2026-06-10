@@ -6,3 +6,8 @@ onlyBuiltDependencies:
   - "@prisma/engines"
   - prisma
   - esbuild
+minimumReleaseAge: 2880
+minimumReleaseAgeExclude:
+  - "@next/*"
+  - eslint-config-next
+  - next
