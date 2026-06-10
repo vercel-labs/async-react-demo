@@ -2,17 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  typedRoutes: true,
+  partialPrefetching: true,
   experimental: {
-    instantInsights: {
-      validationLevel: "warning",
-    },
-    useOffline: true,
-    varyParams: true,
-    prefetchInlining: true,
-    optimisticRouting: true,
-    cachedNavigations: true,
+    appShells: true,
   },
+  typedRoutes: true,
 };
 
 export default nextConfig;

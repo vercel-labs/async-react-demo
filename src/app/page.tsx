@@ -4,7 +4,7 @@ import { LabelFilter, LabelFilterSkeleton } from "@/components/label-filter";
 import { CreateTaskModal } from "@/components/create-task-modal";
 import { getTasks } from "@/data/queries/task";
 
-export const unstable_prefetch = "force-runtime";
+export const prefetch = "allow-runtime";
 
 export default function Home({
   searchParams,
