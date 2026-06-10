@@ -1,8 +1,11 @@
 import { Suspense } from "react";
-import { Board, BoardSkeleton } from "@/components/board";
-import { LabelFilter, LabelFilterSkeleton } from "@/components/label-filter";
-import { CreateTaskModal } from "@/components/create-task-modal";
-import { getTasks } from "@/data/queries/task";
+import { Board, BoardSkeleton } from "@/features/task/components/board";
+import {
+  LabelFilter,
+  LabelFilterSkeleton,
+} from "@/features/task/components/label-filter";
+import { CreateTaskModal } from "@/features/task/components/create-task-modal";
+import { getTasks } from "@/features/task/task-queries";
 
 export const prefetch = "allow-runtime";
 

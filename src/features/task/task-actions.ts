@@ -7,6 +7,7 @@ import {
   LABELS,
   PRIORITY_CYCLE,
   type Assignee,
+  type Comment,
   type Label,
   type Priority,
   type Status,
@@ -18,8 +19,13 @@ import {
   updateTaskStatus,
   updateTaskPriority,
   updateTaskAssignee,
+  getNextCommentId,
+  insertComment,
+  deleteCommentById,
 } from "@/lib/db";
 import { delay } from "@/lib/utils";
+
+const DEFAULT_USER = "You";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -89,4 +95,39 @@ export async function reassignTask(
   updateTag("tasks");
   updateTag(`task-${taskId}`);
   return newAssignee as Assignee;
+}
+
+const addCommentSchema = z.object({
+  taskId: z.string().min(1),
+  content: z.string().min(1, "Content is required"),
+});
+
+export async function addComment(
+  taskId: string,
+  content: string,
+): Promise<Comment | null> {
+  const parsed = addCommentSchema.safeParse({ taskId, content });
+  if (!parsed.success) return null;
+
+  await delay(800);
+
+  const comment: Comment = {
+    id: await getNextCommentId(),
+    taskId: parsed.data.taskId,
+    userName: DEFAULT_USER,
+    content: parsed.data.content.trim(),
+    createdAt: new Date(),
+  };
+  await insertComment(comment);
+  updateTag(`comments-${taskId}`);
+  return comment;
+}
+
+export async function deleteComment(commentId: string) {
+  await delay(500);
+
+  const taskId = await deleteCommentById(commentId, DEFAULT_USER);
+  if (taskId) {
+    updateTag(`comments-${taskId}`);
+  }
 }

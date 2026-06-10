@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import { StatusSelect } from "./status-select";
 import { AssigneeSelect } from "./assignee-select";
 import { PriorityButton } from "./priority-button";
-import { RelativeTime } from "@/components/relative-time";
-import { getTask } from "@/data/queries/task";
+import { RelativeTime } from "@/components/ui/relative-time";
+import { getTask } from "@/features/task/task-queries";
 
 export async function TaskDetail({ id }: { id: string }) {
   const task = await getTask(id);

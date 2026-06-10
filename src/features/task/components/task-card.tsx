@@ -3,7 +3,7 @@
 import { useOptimistic, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { cyclePriority } from "@/data/actions/task";
+import { cyclePriority } from "@/features/task/task-actions";
 import { cn } from "@/lib/utils";
 import {
   PRIORITY_CYCLE,

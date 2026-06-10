@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChipGroup } from "./design/chip-group";
+import { ChipGroup } from "@/components/ui/chip-group";
 
 const labels = [
   { label: "Design", value: "design" },

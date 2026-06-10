@@ -3,7 +3,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { createTask } from "@/data/actions/task";
+import { createTask } from "@/features/task/task-actions";
 import {
   ASSIGNEES,
   LABELS,

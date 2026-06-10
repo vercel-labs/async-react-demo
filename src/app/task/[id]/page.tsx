@@ -1,11 +1,14 @@
 import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { TaskDetail, TaskDetailSkeleton } from "./_components/task-detail";
+import {
+  TaskDetail,
+  TaskDetailSkeleton,
+} from "@/features/task/components/task-detail";
 import {
   CommentSection,
   CommentSectionSkeleton,
-} from "./_components/comment-section";
+} from "@/features/task/components/comment-section";
 
 export const prefetch = "allow-runtime";
 

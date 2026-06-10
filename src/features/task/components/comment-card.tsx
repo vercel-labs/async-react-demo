@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { RelativeTime } from "@/components/relative-time";
+import { RelativeTime } from "@/components/ui/relative-time";
 import { DeleteButton } from "./delete-button";
 
 type CommentCardProps = {

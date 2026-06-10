@@ -2,7 +2,7 @@
 
 import { useOptimistic } from "react";
 import { toast } from "sonner";
-import { cyclePriority } from "@/data/actions/task";
+import { cyclePriority } from "@/features/task/task-actions";
 import { PRIORITY_CYCLE } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";

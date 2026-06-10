@@ -3,7 +3,7 @@
 import { useOptimistic, useRef } from "react";
 import { ArrowUp } from "lucide-react";
 import { toast } from "sonner";
-import { addComment } from "@/data/actions/comment";
+import { addComment } from "@/features/task/task-actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CommentCard } from "./comment-card";

@@ -2,7 +2,7 @@
 
 import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
-import { updateStatus } from "@/data/actions/task";
+import { updateStatus } from "@/features/task/task-actions";
 import { cn } from "@/lib/utils";
 import type { Status } from "@/lib/data";
 
