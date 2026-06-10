@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { cyclePriority } from "@/data/actions/task";
+import { cyclePriority } from "@/features/task/task-actions";
 import { cn } from "@/lib/utils";
 import type { Assignee, Label, Priority, Status } from "@/lib/data";
 

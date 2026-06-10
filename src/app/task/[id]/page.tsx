@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getTask } from "@/data/queries/task";
-import { StatusSelect } from "./_components/status-select";
-import { AssigneeSelect } from "./_components/assignee-select";
-import { PriorityButton } from "./_components/priority-button";
-import { CommentSection } from "./_components/comment-section";
-import { RelativeTime } from "@/components/relative-time";
+import { getTask } from "@/features/task/task-queries";
+import { StatusSelect } from "@/features/task/components/status-select";
+import { AssigneeSelect } from "@/features/task/components/assignee-select";
+import { PriorityButton } from "@/features/task/components/priority-button";
+import { CommentSection } from "@/features/task/components/comment-section";
+import { RelativeTime } from "@/components/ui/relative-time";
 
 export default async function TaskPage({
   params,

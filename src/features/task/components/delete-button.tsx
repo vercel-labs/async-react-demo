@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { deleteComment } from "@/data/actions/comment";
+import { deleteComment } from "@/features/task/task-actions";
 
 export function DeleteButton({ commentId }: { commentId: string }) {
   async function handleClick() {

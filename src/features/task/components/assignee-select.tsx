@@ -1,6 +1,6 @@
 "use client";
 
-import { reassignTask } from "@/data/actions/task";
+import { reassignTask } from "@/features/task/task-actions";
 import { cn } from "@/lib/utils";
 import { ASSIGNEES, type Assignee } from "@/lib/data";
 

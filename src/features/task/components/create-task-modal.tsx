@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { createTask } from "@/data/actions/task";
+import { createTask } from "@/features/task/task-actions";
 import {
   ASSIGNEES,
   LABELS,

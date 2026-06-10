@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowUp } from "lucide-react";
-import { addComment } from "@/data/actions/comment";
+import { addComment } from "@/features/task/task-actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 

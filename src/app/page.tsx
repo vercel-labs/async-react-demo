@@ -1,7 +1,7 @@
-import { Board } from "@/components/board";
-import { LabelFilter } from "@/components/label-filter";
-import { CreateTaskModal } from "@/components/create-task-modal";
-import { getTasks } from "@/data/queries/task";
+import { Board } from "@/features/task/components/board";
+import { LabelFilter } from "@/features/task/components/label-filter";
+import { CreateTaskModal } from "@/features/task/components/create-task-modal";
+import { getTasks } from "@/features/task/task-queries";
 
 export default async function Home({
   searchParams,

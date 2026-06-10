@@ -1,7 +1,7 @@
-import { getComments } from "@/data/queries/comment";
+import { getComments } from "@/features/task/task-queries";
 import { CommentForm } from "./comment-form";
 import { DeleteButton } from "./delete-button";
-import { RelativeTime } from "@/components/relative-time";
+import { RelativeTime } from "@/components/ui/relative-time";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export async function CommentSection({ taskId }: { taskId: string }) {

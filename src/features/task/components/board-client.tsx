@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateStatus } from "@/data/actions/task";
+import { updateStatus } from "@/features/task/task-actions";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils";
 import type { Assignee, Label, Priority, Status } from "@/lib/data";

@@ -1,6 +1,6 @@
 "use client";
 
-import { cyclePriority } from "@/data/actions/task";
+import { cyclePriority } from "@/features/task/task-actions";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/data";
 

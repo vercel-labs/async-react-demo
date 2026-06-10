@@ -7,6 +7,7 @@ import {
   getTasksByLabel,
   getTasksByStatusAndLabel,
   getTaskById as getTaskByIdFromDb,
+  getCommentsByTaskId,
 } from "@/lib/db";
 import { delay } from "@/lib/utils";
 
@@ -27,4 +28,9 @@ export const getTasksByStatus = cache(async (status: Status, label?: Label) => {
 export const getTask = cache(async (id: string) => {
   await delay(300);
   return getTaskByIdFromDb(id);
+});
+
+export const getComments = cache(async (taskId: string) => {
+  await delay(350);
+  return getCommentsByTaskId(taskId);
 });
