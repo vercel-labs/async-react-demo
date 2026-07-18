@@ -10,11 +10,7 @@ export const metadata: Metadata = {
   description: "Async React demo — a task management app",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="min-h-screen bg-black font-sans text-white antialiased">

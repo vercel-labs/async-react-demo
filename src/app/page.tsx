@@ -9,11 +9,7 @@ import { getTasks } from "@/features/task/task-queries";
 
 export const prefetch = "allow-runtime";
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ label?: string }>;
-}) {
+export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <div className="group mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -21,7 +17,11 @@ export default function Home({
           <h1 className="text-xl font-semibold tracking-tight">Board</h1>
           <p className="mt-1 text-sm text-white/60">
             <Suspense fallback={<span className="font-mono text-xs">–</span>}>
-              <TaskCount searchParams={searchParams} />
+              {searchParams.then(({ label }) => (
+                <TaskCount
+                  label={typeof label === "string" ? label : undefined}
+                />
+              ))}
             </Suspense>
           </p>
         </div>
@@ -36,7 +36,11 @@ export default function Home({
       <div className="group-has-data-pending:opacity-50 transition-opacity">
         <Suspense fallback={<BoardSkeleton />}>
           {searchParams.then(({ label }) => (
-            <Board tasksPromise={getTasks(label)} />
+            <Board
+              tasksPromise={getTasks(
+                typeof label === "string" ? label : undefined,
+              )}
+            />
           ))}
         </Suspense>
       </div>
@@ -44,12 +48,7 @@ export default function Home({
   );
 }
 
-async function TaskCount({
-  searchParams,
-}: {
-  searchParams: Promise<{ label?: string }>;
-}) {
-  const { label } = await searchParams;
+async function TaskCount({ label }: { label?: string }) {
   const allTasks = await getTasks(label);
   return (
     <>
