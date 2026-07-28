@@ -1,7 +1,6 @@
 import "server-only";
 
-import { cache } from "react";
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { LABELS, type Label, type Status } from "@/lib/data";
 import {
   getAllTasks,
@@ -12,8 +11,9 @@ import {
 } from "@/lib/db";
 import { delay } from "@/lib/utils";
 
-export const getTasks = cache(async (label?: string) => {
+export async function getTasks(label?: string) {
   "use cache";
+  cacheLife("hours");
   cacheTag("tasks");
 
   await delay(400);
@@ -22,25 +22,27 @@ export const getTasks = cache(async (label?: string) => {
       ? await getTasksByLabel(label)
       : await getAllTasks();
   return filtered.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }));
-});
+}
 
-export const getTasksByStatus = cache(async (status: Status, label?: Label) => {
+export async function getTasksByStatus(status: Status, label?: Label) {
   "use cache";
+  cacheLife("hours");
   cacheTag("tasks");
 
   await delay(400);
   return getTasksByStatusAndLabel(status, label);
-});
+}
 
-export const getTask = cache(async (id: string) => {
+export async function getTask(id: string) {
   "use cache";
+  cacheLife("hours");
   cacheTag("tasks", `task-${id}`);
 
   await delay(300);
   return getTaskByIdFromDb(id);
-});
+}
 
-export const getComments = cache(async (taskId: string) => {
+export async function getComments(taskId: string) {
   await delay(350);
   return getCommentsByTaskId(taskId);
-});
+}
