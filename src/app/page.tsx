@@ -7,8 +7,6 @@ import {
 import { CreateTaskModal } from "@/features/task/components/create-task-modal";
 import { getTasks } from "@/features/task/task-queries";
 
-export const prefetch = "allow-runtime";
-
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <div className="group mx-auto max-w-6xl px-4 py-8 sm:px-6">
