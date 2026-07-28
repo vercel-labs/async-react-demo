@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod/v4";
-import { updateTag } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import {
   ASSIGNEES,
   LABELS,
@@ -119,7 +119,7 @@ export async function addComment(
     createdAt: new Date(),
   };
   await insertComment(comment);
-  updateTag(`comments-${taskId}`);
+  refresh();
   return comment;
 }
 
@@ -128,6 +128,6 @@ export async function deleteComment(commentId: string) {
 
   const taskId = await deleteCommentById(commentId, DEFAULT_USER);
   if (taskId) {
-    updateTag(`comments-${taskId}`);
+    refresh();
   }
 }

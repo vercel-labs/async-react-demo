@@ -20,16 +20,13 @@ export default function TaskPage({ params }: PageProps<"/task/[id]">) {
         <ArrowLeft className="size-3.5" />
         Back
       </Link>
-
       <Suspense fallback={<TaskDetailSkeleton />}>
         {params.then(({ id }) => (
           <>
             <TaskDetail id={id} />
-
             <h3 className="mb-4 text-[13px] font-medium text-white/60">
               Discussion
             </h3>
-
             <Suspense fallback={<CommentSectionSkeleton />}>
               <CommentSection taskId={id} />
             </Suspense>

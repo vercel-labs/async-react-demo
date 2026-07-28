@@ -41,9 +41,6 @@ export const getTask = cache(async (id: string) => {
 });
 
 export const getComments = cache(async (taskId: string) => {
-  "use cache";
-  cacheTag(`comments-${taskId}`);
-
   await delay(350);
   return getCommentsByTaskId(taskId);
 });

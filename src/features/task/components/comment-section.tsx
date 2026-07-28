@@ -10,7 +10,6 @@ export async function CommentSection({ taskId }: { taskId: string }) {
   return (
     <div>
       <OptimisticComments taskId={taskId} />
-
       <div className="space-y-1">
         {comments.map((comment) => (
           <CommentCard
@@ -23,7 +22,6 @@ export async function CommentSection({ taskId }: { taskId: string }) {
             }
           />
         ))}
-
         {comments.length === 0 && (
           <p className="py-10 text-center text-[13px] text-white/40">
             No comments yet
