@@ -33,5 +33,20 @@ export async function CommentSection({ taskId }: { taskId: string }) {
 }
 
 export function CommentSectionSkeleton() {
-  return <Skeleton className="h-64 rounded-xl bg-white/[0.03]" />;
+  return (
+    <div aria-hidden>
+      <div className="mb-5 rounded-md bg-white/[0.03] p-2">
+        <Skeleton className="h-5 w-36 rounded bg-white/[0.06]" />
+      </div>
+      <div className="rounded-lg px-3 py-2.5">
+        <div className="flex items-start gap-2.5">
+          <Skeleton className="mt-0.5 size-5 shrink-0 rounded-full bg-white/[0.08]" />
+          <div className="min-w-0 flex-1">
+            <Skeleton className="h-3.5 w-24 rounded bg-white/[0.06]" />
+            <Skeleton className="mt-2 h-3 w-48 max-w-full rounded bg-white/[0.05]" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
