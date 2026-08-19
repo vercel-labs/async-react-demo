@@ -44,7 +44,8 @@ export function Board({
       moveTask({ taskId, status: targetStatus });
       setDragOverColumn(null);
       try {
-        await updateStatus(taskId, targetStatus);
+        const status = await updateStatus(taskId, targetStatus);
+        if (!status) toast.error("Failed to move task");
       } catch {
         toast.error("Failed to move task");
       }

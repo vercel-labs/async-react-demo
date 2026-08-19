@@ -41,7 +41,8 @@ export function StatusSelect({
     startTransition(async () => {
       setOptimisticStatus(newStatus);
       try {
-        await updateStatus(taskId, newStatus);
+        const status = await updateStatus(taskId, newStatus);
+        if (!status) toast.error("Failed to update status");
       } catch {
         toast.error("Failed to update status");
       }
