@@ -72,10 +72,7 @@ export async function cyclePriority(taskId: string): Promise<Priority | null> {
   return newPriority;
 }
 
-export async function updateStatus(
-  taskId: string,
-  newStatus: Status,
-) {
+export async function updateStatus(taskId: string, newStatus: Status) {
   await delay(500);
   const updated = await updateTaskStatus(taskId, newStatus);
   if (!updated) {
