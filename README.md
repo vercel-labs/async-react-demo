@@ -2,8 +2,6 @@
 
 A Next.js task board demonstrating async React coordination — optimistic updates, transitions, pending feedback, and form state management.
 
-The [`main`](https://github.com/vercel-labs/async-react-demo/tree/main) branch has all async coordination patterns applied; the [`plain`](https://github.com/vercel-labs/async-react-demo/tree/plain) branch is the base app without any coordination.
-
 **[Live Demo](https://async-react-demo.labs.vercel.dev/)**
 
 ## App Features
