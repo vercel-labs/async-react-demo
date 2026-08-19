@@ -75,13 +75,15 @@ export async function cyclePriority(taskId: string): Promise<Priority | null> {
 export async function updateStatus(
   taskId: string,
   newStatus: Status,
-): Promise<Status | null> {
+) {
   await delay(500);
   const updated = await updateTaskStatus(taskId, newStatus);
-  if (!updated) return null;
+  if (!updated) {
+    return { success: false as const, error: "Task no longer exists" };
+  }
   updateTag("tasks");
   updateTag(`task-${taskId}`);
-  return newStatus;
+  return { success: true as const, status: newStatus };
 }
 
 export async function reassignTask(
